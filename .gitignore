@@ -52,3 +52,11 @@ rsconnect/
 data/
 
 *data/
+
+
+.Rproj.user
+.Rproj.user/
+.Rproj
+.Rhistory
+.RData
+.Ruserdata
