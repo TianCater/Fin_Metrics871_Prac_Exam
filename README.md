@@ -1,39 +1,44 @@
-# 19025831
+# Purpose
 
-Welcome to ProjectTemplate!
+Purpose of this work folder.
 
-This file introduces you to ProjectTemplate, but you should eventually replace
-the contents of this file with an introduction to your project. People who
-work with your data in the future will thank you for it, including your future
-self.
+Ideally store a minimum working example data set in data folder.
 
-ProjectTemplate is an R package that helps you organize your statistical
-analysis projects. Since you're reading this file, we'll assume that you've
-already called `create.project()` to set up this project and all of its
-contents.
+Add binary files in bin, and closed R functions in code. Human Readable
+settings files (e.g. csv) should be placed in settings/
 
-To load your new project, you'll first need to `setwd()` into the directory
-where this README file is located. Then you need to run the following two
-lines of R code:
+``` r
+rm(list = ls()) # Clean your environment:
+gc() # garbage collection - It can be useful to call gc after a large object has been removed, as this may prompt R to return memory to the operating system.
+```
 
-	library('ProjectTemplate')
-	load.project()
+    ##          used (Mb) gc trigger (Mb) max used (Mb)
+    ## Ncells 461707 24.7     997040 53.3   644245 34.5
+    ## Vcells 818289  6.3    8388608 64.0  1635428 12.5
 
-After you enter the second line of code, you'll see a series of automated
-messages as ProjectTemplate goes about doing its work. This work involves:
-* Reading in the global configuration file contained in `config`.
-* Loading any R packages you listed in the configuration file.
-* Reading in any datasets stored in `data` or `cache`.
-* Preprocessing your data using the files in the `munge` directory.
+``` r
+library(tidyverse)
+```
 
-Once that's done, you can execute any code you'd like. For every analysis
-you create, we'd recommend putting a separate file in the `src` directory.
-If the files start with the two lines mentioned above:
+    ## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+    ## ✔ ggplot2 3.4.0      ✔ purrr   0.3.5 
+    ## ✔ tibble  3.1.8      ✔ dplyr   1.0.10
+    ## ✔ tidyr   1.2.1      ✔ stringr 1.4.1 
+    ## ✔ readr   2.1.3      ✔ forcats 0.5.2 
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ✖ dplyr::filter() masks stats::filter()
+    ## ✖ dplyr::lag()    masks stats::lag()
 
-	library('ProjectTemplate')
-	load.project()
+``` r
+list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
 
-You'll have access to all of your data, already fully preprocessed, and
-all of the libraries you want to use.
+# Installing and/or loading packages
 
-For more details about ProjectTemplate, see http://projecttemplate.net
+pacman::p_load("tidyverse","fmxdat", "dplyr", "rmsfuns", "PerformanceAnalytics", "tbl2xts", "xts", "rportfolios", "Texevier", "kableExtra")
+```
+
+# Heading
+
+## Subheading
+
+### Subsubheading
