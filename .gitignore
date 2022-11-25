@@ -50,3 +50,5 @@ rsconnect/
 
 # Dont commit data folders
 *data/
+
+data/
