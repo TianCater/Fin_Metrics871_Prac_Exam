@@ -295,12 +295,498 @@ fmxdat::finplot(BEI_infl_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 
 
 
 
+```{r, Data import}
+
+T40 <- read_rds("data/T40.rds") # There are 92 stocks in this tbl
+
+RebDays <- read_rds("data/Rebalance_days.rds")
+
+Capped_SWIX <- read_rds("data/Capped_SWIX.rds") # This is the Monthly Capped and Weighted Portf Returns for SWIX Index (J433)
+
+# I first shrink the dataframe to include only what in needed
+
+T40_a <- T40 |> select(-Short.Name) |> 
+    
+    mutate(Tickers = gsub(" SJ Equity", "", Tickers))  # Remove clutter in Tickers names
+
+```
+
+```{r, ALSI and SWIX wieghted port returns by hand}
+
+# I generate a tbl calculating both Indexes weighted returns by hand
+
+df_Port_ret <- T40_a |> 
+    
+    mutate(J400 = coalesce(J400, 0)) |> 
+    
+    mutate(J400 = coalesce(J400, 0)) |> 
+    
+    mutate(ALSI_wret = Return*J200) |> 
+    
+    mutate(SWIX_wret = Return*J400) |> 
+    
+    arrange(date) |> 
+    
+    group_by(date) |> 
+    
+    mutate(ALSI_pret = sum(ALSI_wret)) |> 
+    
+    mutate(SWIX_pret = sum(SWIX_wret)) 
+    
+```
 
 
 
+```{r, ALSI and SWIX weighted portfoio returns using Safe_returns}
+
+
+# Lets calculate the weighted portfolio daily return for ALSI and SWIX using Safe_Returns to verify my by hand calculation
+
+Wghts_ALSI_xts <- T40_a |> select(date, Tickers , J200) |> tbl_xts(cols_to_xts = J200, spread_by = Tickers)
+
+Wghts_SWIX_xts <- T40_a |> select(date, Tickers , J400) |> tbl_xts(cols_to_xts = J400, spread_by = Tickers)
+
+Returns_xts <- T40_a |> select(date, Tickers , Return) |> tbl_xts(cols_to_xts = Return, spread_by = Tickers)
+
+# Set NA's to null to use PA's Safe_returns.Portfolio command
+
+Wghts_ALSI_xts[is.na(Wghts_ALSI_xts)] <- 0
+Wghts_SWIX_xts[is.na(Wghts_SWIX_xts)] <- 0
+Returns_xts[is.na(Returns_xts)] <- 0
+
+# Now I calculate the weighed (uncapped) portfolio returns
+
+Port_Ret_ALSI <- rmsfuns::Safe_Return.portfolio(R = Returns_xts, weights = Wghts_ALSI_xts, lag_weights = T) |> 
+    
+                 xts_tbl() |> rename(ALSI_Ret = portfolio.returns)
+
+Port_Ret_SWIX <- rmsfuns::Safe_Return.portfolio(R = Returns_xts, weights = Wghts_SWIX_xts, lag_weights = T) |> 
+    
+                 xts_tbl() |> rename(SWIX_Ret = portfolio.returns)
+
+# Now I combine the above two weighted portfolio returns
+
+Merged_Port_Ret <- inner_join(Port_Ret_ALSI, Port_Ret_SWIX, by= "date")
+
+# I verify that my by hand calc and the Safe_return calc is the same:
+# df_Port_ret |> select(date, ALSI_pret, SWIX_pret) |> group_by(date, ALSI_pret, SWIX_pret ) |> summarise()
+# Happy ---> They are the same
+
+```
+
+```{r, Portfolios cumulative returns}
+
+# Now I proceed to calculate the Portfolios' cumulative return and plot it
+
+Cum_ret <- Merged_Port_Ret |> arrange(date) |> 
+    
+    mutate(across(.cols = -date, .fns = ~cumprod(1 + .))) |> 
+    
+    mutate(across(.cols = -date, .fns = ~./first(.))) |> # Start at 1
+    
+    rename(ALSI = ALSI_Ret, SWIX= SWIX_Ret) |> 
+    
+    pivot_longer(cols=-date, names_to = "Index", values_to = "Cumret")
+    
+# And finally the plot
+
+Indexes_Cum_ret_plot <-    Cum_ret |> 
+       
+       ggplot() + 
+  
+  geom_line(aes(date, Cumret , color = Index), size = 0.6, alpha = 0.7) +
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "%", caption = "Note:\nCalculation own",
+       title = "Cumulative Returns of ALSI and SWIX Indexes",
+       subtitle = "")
+
+# Finplot for finishing touches:
+
+fmxdat::finplot(Indexes_Cum_ret_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "1 year", darkcol = T)
+
+```
+
+```{r, Portfolio Returns subdivided into Market Cap's Contributions}
+
+# I now create the final tbl that includes the weighted return contribition of each sector  to the overall weighted portfolio return (daily) 
+
+df_Port_ret_final <- df_Port_ret |> arrange(date) |> 
+    
+    group_by(date, Sector) |>       # Group by Market Cap to calc each category's contr to wieghted portf return
+    
+    mutate(ALSI_wght_sector = coalesce(J400, 0)) |> # Make NA's 0 to use PA later
+    
+    mutate(SWIX_wght_sector = coalesce(J200, 0)) |>
+    
+    mutate(ALSI_wret = coalesce(ALSI_wret, 0)) |> 
+    
+    mutate(SWIX_wret = coalesce(SWIX_wret, 0)) |>
+    
+    mutate(ALSI_ret_sector = sum(ALSI_wret, na.rm = T)) |>  # The weight-contribution of each sector on each day
+    
+    mutate(SWIX_ret_sector = sum(SWIX_wret, na.rm = T)) |>
+
+    mutate(ALSI_wght_sector = sum(J400, na.rm = T)) |>  # The weighted return contribution of each sector on each day
+    
+    mutate(SWIX_wght_sector = sum(J200, na.rm = T)) |>
+    
+    ungroup()
+
+ALSI_wght_sector <-  df_Port_ret_final |> select(date, Sector ,ALSI_wght_sector) |> group_by(Sector) |> unique() |> 
+    tbl_xts(cols_to_xts = ALSI_wght_sector, spread_by = Sector)
+
+SWIX_wght_sector <- df_Port_ret_final |> select(date, Sector ,SWIX_wght_sector) |> group_by(Sector) |> unique() |> 
+    tbl_xts(cols_to_xts = SWIX_wght_sector, spread_by = Sector)
+
+ALSI_ret_sector <- df_Port_ret_final |> select(date, Sector ,ALSI_ret_sector) |> group_by(Sector) |> unique() |> 
+    tbl_xts(cols_to_xts = ALSI_ret_sector, spread_by = Sector)
+
+SWIX_ret_sector <- df_Port_ret_final |> select(date, Sector ,SWIX_ret_sector) |> group_by(Sector) |> unique() |> 
+    tbl_xts(cols_to_xts = SWIX_ret_sector, spread_by = Sector)
 
 
 
+ ALSI_RetPort_sector <- 
+      rmsfuns::Safe_Return.portfolio(ALSI_ret_sector, 
+                                     
+                       weights = ALSI_wght_sector, lag_weights = TRUE,
+                       
+                       verbose = TRUE, contribution = TRUE, 
+                       
+                       value = 1000, geometric = TRUE) 
+
+ SWIX_RetPort_sector <- 
+      rmsfuns::Safe_Return.portfolio(SWIX_ret_sector, 
+                                     
+                       weights = SWIX_wght_sector, lag_weights = TRUE,
+                       
+                       verbose = TRUE, contribution = TRUE, 
+                       
+                       value = 1000, geometric = TRUE)
+    
+
+ ALSI_RetPort_sector$BOP.Weight  %>% .[endpoints(.,'months')] %>% chart.StackedBar()
+ 
+  SWIX_RetPort_sector$BOP.Weight  %>% .[endpoints(.,'months')] %>% chart.StackedBar()
+
+  ALSI_RetPort_sector$contribution |> chart.CumReturns(legend.loc = "bottom")
+  
+  SWIX_RetPort_sector$contribution |> chart.CumReturns(legend.loc = "bottom")
+ 
+```
+
+```{r, Rebalance days}
+
+# I firt pull the effective rebalance dates
+
+Rebalance_Days <-RebDays |> filter(Date_Type %in% c("Effective Date")) |> pull(date)
+    
+# And now for both Indexes I create a capped weights tbl for rebalancing purposes
+
+rebalance_col_ALSI <- T40_a |> 
+    
+    filter(date %in% Rebalance_Days) |> 
+    
+    select(date, Tickers, J200) |> 
+    
+    rename(weight = J200) |> 
+    
+    mutate(RebalanceTime = format(date, "%Y_%b")) |> 
+    
+    mutate(weight= coalesce(weight, 0))
+    
+ rebalance_col_SWIX <- T40_a |> 
+    
+    filter(date %in% Rebalance_Days) |> 
+    
+    select(date, Tickers, J400) |> 
+     
+     rename(weight = J400) |> 
+     
+     mutate(RebalanceTime = format(date, "%Y_%b")) |> 
+     
+      mutate(weight= coalesce(weight, 0))
+    
+```
+
+
+```{r, lets apply capping to the indexes}
+
+Proportional_Cap_Foo <- function(df_Cons, W_Cap = 0.08){
+  
+  # Let's require a specific form from the user... Alerting when it does not adhere this form
+  if( !"weight" %in% names(df_Cons)) stop("... for Calc capping to work, provide weight column called 'weight'")
+  
+  if( !"date" %in% names(df_Cons)) stop("... for Calc capping to work, provide date column called 'date'")
+  
+  if( !"Tickers" %in% names(df_Cons)) stop("... for Calc capping to work, provide id column called 'Tickers'")
+
+  # First identify the cap breachers...
+  Breachers <- 
+    df_Cons %>% filter(weight > W_Cap) %>% pull(Tickers)
+  
+  # Now keep track of breachers, and add to it to ensure they remain at 10%:
+  if(length(Breachers) > 0) {
+    
+    while( df_Cons %>% filter(weight > W_Cap) %>% nrow() > 0 ) {
+      
+      
+      df_Cons <-
+        
+        bind_rows(
+          
+          df_Cons %>% filter(Tickers %in% Breachers) %>% mutate(weight = W_Cap),
+          
+          df_Cons %>% filter(!Tickers %in% Breachers) %>% 
+            mutate(weight = (weight / sum(weight, na.rm=T)) * (1-length(Breachers)*W_Cap) )
+          
+        )
+      
+      Breachers <- c(Breachers, df_Cons %>% filter(weight > W_Cap) %>% pull(Tickers))
+      
+    }
+
+    if( sum(df_Cons$weight, na.rm=T) > 1.001 | sum(df_Cons$weight, na.rm=T) < 0.999 | max(df_Cons$weight, na.rm = T) > W_Cap) {
+      
+      stop( glue::glue("For the Generic weight trimming function used: the weight trimming causes non unit 
+      summation of weights for date: {unique(df_Cons$date)}...\n
+      The restriction could be too low or some dates have extreme concentrations...") )
+      
+    }
+    
+  } else {
+    
+  }
+  
+  df_Cons
+  
+  }
+  
+
+# Now, to map this across all the dates, I purrr::map_df 
+Capped_ALSI_10 <- 
+    
+    rebalance_col_ALSI |> 
+
+    group_split(RebalanceTime) |> 
+    
+    map_df(~Proportional_Cap_Foo(., W_Cap = 0.1) ) |>  select(-RebalanceTime)
+  
+# Now I do the same for a 6% cap:
+
+Capped_ALSI_6 <- 
+    
+    rebalance_col_ALSI |> 
+
+    group_split(RebalanceTime) |> 
+    
+    map_df(~Proportional_Cap_Foo(., W_Cap = 0.06) ) |>  select(-RebalanceTime)
+
+Capped_SWIX_10 <- 
+    
+    rebalance_col_ALSI |> 
+
+    group_split(RebalanceTime) |> 
+    
+    map_df(~Proportional_Cap_Foo(., W_Cap = 0.1) ) |>  select(-RebalanceTime)
+  
+Capped_SWIX_6 <- 
+    
+    rebalance_col_ALSI |> 
+
+    group_split(RebalanceTime) |> 
+    
+    map_df(~Proportional_Cap_Foo(., W_Cap = 0.06) ) |>  select(-RebalanceTime)
+
+# # Testing if the max weight is correct for all 4 tbl above
+
+Capped_ALSI_10 %>% pull(weight) %>% max(.) 
+Capped_ALSI_6 %>% pull(weight) %>% max(.) 
+Capped_SWIX_10 %>% pull(weight) %>% max(.) 
+Capped_SWIX_6 %>% pull(weight) %>% max(.) # Success!!
+
+```
+
+
+```{r, Newly capped index weighted returns}
+
+####For ALSI capped at 10%#####
+
+wghts_ALSI_10 <- 
+  Capped_ALSI_10 %>% 
+  tbl_xts(cols_to_xts = weight, spread_by = Tickers)
+
+ret_ALSI_10 <- 
+  T40_a %>% 
+  
+  filter(Tickers %in% unique(Capped_ALSI_10$Tickers) ) %>% 
+  
+  tbl_xts(cols_to_xts = Return, spread_by = Tickers)
+
+wghts_ALSI_10[is.na(wghts_ALSI_10)] <- 0
+
+ret_ALSI_10[is.na(ret_ALSI_10)] <- 0
+
+ALSI_10_Idx <- 
+  rmsfuns::Safe_Return.portfolio(R = ret_ALSI_10, weights = wghts_ALSI_10, lag_weights = T) |> 
+  
+  # Then I make it a tibble:
+  xts_tbl() |>  
+  
+  rename(ALSI_10_Idx = portfolio.returns)
+
+####For ALSI capped at 6%#####
+
+wghts_ALSI_6 <- 
+  Capped_ALSI_6 %>% 
+  tbl_xts(cols_to_xts = weight, spread_by = Tickers)
+
+ret_ALSI_6 <- 
+  T40_a %>% 
+  
+  filter(Tickers %in% unique(Capped_ALSI_6$Tickers) ) %>% 
+  
+  tbl_xts(cols_to_xts = Return, spread_by = Tickers)
+
+wghts_ALSI_6[is.na(wghts_ALSI_6)] <- 0
+
+ret_ALSI_6[is.na(ret_ALSI_6)] <- 0
+
+ALSI_6_Idx <- 
+  rmsfuns::Safe_Return.portfolio(R = ret_ALSI_6, weights = wghts_ALSI_6, lag_weights = T) |> 
+  
+  # Then I make it a tibble:
+  xts_tbl() |>  
+  
+  rename(ALSI_6_Idx = portfolio.returns)
+
+####For SWIX capped at 10%#####
+
+wghts_SWIX_10 <- 
+  Capped_SWIX_10 %>% 
+  tbl_xts(cols_to_xts = weight, spread_by = Tickers)
+
+ret_SWIX_10 <- 
+  T40_a %>% 
+  
+  filter(Tickers %in% unique(Capped_SWIX_10$Tickers) ) %>% 
+  
+  tbl_xts(cols_to_xts = Return, spread_by = Tickers)
+
+wghts_SWIX_10[is.na(wghts_SWIX_10)] <- 0
+
+ret_SWIX_10[is.na(ret_SWIX_10)] <- 0
+
+SWIX_10_Idx <- 
+  rmsfuns::Safe_Return.portfolio(R = ret_SWIX_10, weights = wghts_SWIX_10, lag_weights = T) |> 
+  
+  # Then I make it a tibble:
+  xts_tbl() |>  
+  
+  rename(SWIX_10_Idx = portfolio.returns)
+
+
+
+####For SWIX capped at 6%#####
+
+wghts_SWIX_6 <- 
+  Capped_SWIX_6 %>% 
+  tbl_xts(cols_to_xts = weight, spread_by = Tickers)
+
+ret_SWIX_6 <- 
+  T40_a %>% 
+  
+  filter(Tickers %in% unique(Capped_SWIX_6$Tickers) ) %>% 
+  
+  tbl_xts(cols_to_xts = Return, spread_by = Tickers)
+
+wghts_SWIX_6[is.na(wghts_SWIX_6)] <- 0
+
+ret_SWIX_6[is.na(ret_SWIX_6)] <- 0
+
+SWIX_6_Idx <- 
+  rmsfuns::Safe_Return.portfolio(R = ret_SWIX_6, weights = wghts_SWIX_6, lag_weights = T) |> 
+  
+  # Then I make it a tibble:
+  xts_tbl() |>  
+  
+  rename(SWIX_6_Idx = portfolio.returns)
+
+
+
+```
+
+
+```{r, Plot the capped indexes}
+
+Capped_df_final <- ALSI_6_Idx |> inner_join(ALSI_10_Idx, by ="date") |> 
+    inner_join(SWIX_6_Idx, by ="date") |> 
+    inner_join(SWIX_10_Idx, by ="date") |>
+    
+    arrange(date) |> 
+    mutate(across(.cols = -date, .fns = ~cumprod(1+.))) |> # cumulative returns
+    mutate(across(.cols = -date, .fns = ~./first(.))) |>   # Start at 1
+    inner_join(Cum_ret |> pivot_wider(names_from= "Index", values_from= "Cumret"), by = "date") |> # Add the uncapped cumret 
+    
+    rename("ALSI Capped 6%" = ALSI_6_Idx, "ALSI Capped 10%" = ALSI_10_Idx,"SWIX Capped 6%" =  SWIX_6_Idx, "SWIX Capped 10%" =  SWIX_10_Idx, "Uncapped SWIX" = SWIX, "Uncapped ALSI" = ALSI) |> # rename for clarity
+    
+    pivot_longer(cols = -date, names_to = "Description", values_to = "Values")
+
+# And now, at last, for the plot
+
+capping_plot_ALSI <- 
+
+Capped_df_final |> filter(Description %in% c("ALSI Capped 6%", "ALSI Capped 10%", "Uncapped ALSI"))  |> 
+
+    ggplot() + 
+  
+  geom_line(aes(date, Values , color = Description), size = 0.8, alpha = 0.7) +
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "%", caption = "Note:\nCalculation own",
+       title = "Cumulative Returns of ALSI and SWIX Indexes Capped at 6% and 10%",
+       subtitle = "")
+
+capping_plot_SWIX <- 
+
+Capped_df_final |> filter(Description %in% c("SWIX Capped 6%", "SWIX Capped 10%", "Uncapped SWIX"))  |> 
+
+    ggplot() + 
+  
+  geom_line(aes(date, Values , color = Description), size = 0.8, alpha = 0.7) +
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "%", caption = "Note:\nCalculation own",
+       title = "Cumulative Returns of ALSI and SWIX Indexes Capped at 6% and 10%",
+       subtitle = "")
+
+# Finplot for finishing touches:
+
+fmxdat::finplot(capping_plot_ALSI, x.vert = T, x.date.type = "%Y", x.date.dist = "1 year", darkcol = T)
+
+fmxdat::finplot(capping_plot_SWIX, x.vert = T, x.date.type = "%Y", x.date.dist = "1 year", darkcol = T)
+
+
+```
 
 
 
