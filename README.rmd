@@ -1,7 +1,7 @@
 ---
 output:
   md_document:
-    variant: markdown_github
+    variant: html
 ---
 
 # Purpose
@@ -226,7 +226,7 @@ final_stats_table <-
     left_join(table_post_GFC|>  data.frame() |>  tibble::rownames_to_column(), by = "rowname" ) |> 
     rename(Description = rowname) |> 
     
-    kbl(col.names = c("Description",
+    knitr::kable(col.names = c("Description",
                            "SA",
                            "US",
                            "SA", "US")) |> kable_classic(full_width = F) |> 
