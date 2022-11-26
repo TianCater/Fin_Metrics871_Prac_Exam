@@ -413,7 +413,7 @@ fmxdat::finplot(Indexes_Cum_ret_plot, x.vert = T, x.date.type = "%Y", x.date.dis
 
 ```
 
-```{r, Portfolio Returns subdivided into Market Cap's Contributions}
+```{r, Portfolio Returns subdivided into Market Caps Contributions}
 
 # I now create the final tbl that includes the weighted return contribition of each sector  to the overall weighted portfolio return (daily) 
 
