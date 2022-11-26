@@ -13,7 +13,7 @@ Ideally store a minimum working example data set in data folder.
 Add binary files in bin, and closed R functions in code. Human Readable settings files (e.g. csv) should be placed in settings/
 
 
-```{r}
+```{r, echo=FALSE}
 
 rm(list = ls()) # Clean your environment:
 gc() # garbage collection - It can be useful to call gc after a large object has been removed, as this may prompt R to return memory to the operating system.
@@ -22,33 +22,275 @@ list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.
 
 # Installing and/or loading packages
 
-pacman::p_load("tidyverse","fmxdat", "dplyr", "rmsfuns", "PerformanceAnalytics", "tbl2xts", "xts", "rportfolios", "Texevier", "kableExtra")
+pacman::p_load("tidyverse","fmxdat", "dplyr", "rmsfuns", "PerformanceAnalytics", "tbl2xts", "xts", "rportfolios", "Texevier", "kableExtra", "ggplot2", "extrafont", "devtools")
 
 ```
 
 
-# Heading
+# Question 1
+
+NOTE TO SELF --> FIGURE OUT HOW TO LET A FEW ACTIVE FUNDS REPRESENT THE ENTIRE SAMPLE, IN ORDER TO COMPARE. IE, EW PORTF? PCA? CLUSTER?
 
 
-## Subheading
+```{r, Loading Data}
 
-### Subsubheading
+ASISA <- read_rds("data/ASISA.rds") # ASISA Active Managers. Notice that there are 227 different actively managed funds.
+
+                                    # Monthly observations, 2002-11-30 to 2022-10-31
+
+BM <- read_rds("data/Capped_SWIX.rds") # Benchmark: Capped Swix. Monthly observations, 1999-12-31 to 2022-10-31
+
+AI_Fund <- read_rds("data/AI_Max_Fund.rds") # My Systematic AI Fund. Monthly observations, 2003-01-31 to 2022-10-31
+
+```
+
+
 
 
 ```{r}
 
 
+df <- left_join(BM |> pivot_wider(names_from = "Tickers", values_from = "Returns") , ASISA |> pivot_wider(names_from = "Name", values_from = "Returns"), by= "date") |> left_join(AI_Fund |> pivot_wider(names_from = "Tickers", values_from = "Returns"), by ="date") |> pivot_longer(cols = -date ,names_to = "Name", values_to = "Returns") 
 
+
+p <- df |> arrange(date) |> filter(Name == c("Our_Fund", "J433")) |> 
+    
+    ggplot() + 
+  
+  geom_line(aes(date, Returns, color = Name), size = 0.4, alpha = 0.7) + 
+  
+  fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(28),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = F) + 
+  
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "Cumulative Returns", caption = "Note:\nCalculation own",
+       title = "Illustrating fmxdat Auxilliary functions for ggplot",
+       subtitle = "If not subtitle, make blank and Subtitle size small to make a gap\nbetween plot and Title. Test this yourself")
+  
+# Finplot now adds finishing touches easily:
+
+  fmxdat::finplot(p, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years")
+
+```
+
+
+
+# Question 2
+
+
+```{r, Data Import}
+
+SA_bonds <- read_rds("data/SA_Bonds.rds")
+BE_Infl <- read_rds("data/BE_Infl.rds")
+bonds_2y <- read_rds("data/bonds_2y.rds")
+bonds_10y <- read_rds("data/bonds_10y.rds")
+usdzar <- read_rds("data/usdzar.rds")
+ZA_Infl <- read_rds("data/ZA_Infl.rds")
+IV <- read_rds("data/IV.rds")
+
+```
+
+```{r, Global Bond Yield Spreads Data Wrangling}
+
+Countries_to_compare <- c("Germany", "ZA", "US", "CHINA", "Japan", "Brazil")
+
+bonds_10y_adj <- bonds_10y |> pivot_wider(names_from = "Name", values_from = "Bond_10Yr") |> 
+    
+    left_join(SA_bonds |> select(c(date, ZA_10Yr)), by="date") |> 
+    
+    pivot_longer(cols = -date, names_to = "Name", values_to = "Bond_10Yr")|> 
+    
+    mutate(Name = gsub("_10Yr", "", Name)) |> 
+    
+    filter((Name %in% Countries_to_compare))  # Only filter the desired countries
+
+# Upon initial attempt to format bonds_2y, I realised there is a duplicate entry, identified by the following 
+
+duplicate_entries_identification <- bonds_2y %>%
+                                    dplyr::group_by(date, Name) %>%
+                                    dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+                                    dplyr::filter(n > 1L)
+
+# Since the duplicate entry is "Chile_2yr", I remove Chile in order to pivot_wider. 
+
+bonds_2y_adj <- bonds_2y |> filter(!(Name %in% c("Chile_2yr"))) |>  # remove chile
+    
+    pivot_wider(names_from = "Name", values_from = "Bond_2Yr") |> 
+    
+    left_join(SA_bonds |> select(c(date, ZA_2Yr)), by="date") |> 
+    
+    pivot_longer(cols = -date, names_to = "Name", values_to = "Bond_2Yr") |> 
+    
+    mutate(Name = gsub("_2yr", "", Name)) |> mutate(Name = gsub("_2Yr", "", Name)) |> 
+    
+    filter(Name %in% Countries_to_compare) 
+
+# Now I proceed to merge the 2Yr and 10Yr global yields and their spreads in one tbl
+
+Global_bonds_data <- inner_join(bonds_2y_adj, bonds_10y_adj, by= c("date", "Name")) |> 
+    
+    mutate(Spread = Bond_10Yr - Bond_2Yr)
+
+```
+
+```{r, Global Bond Yield Spreads Plot}
+
+Global_bonds_plot <-    Global_bonds_data |> select(date,Name ,Spread) |> 
+    
+    ggplot() + 
+  
+  geom_line(aes(date, Spread , color = Name), size = 0.8, alpha = 0.7) +
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "Yield Spread (%)", caption = "Note:\nCalculation own",
+       title = "Global Bond Market Yield Spreads",
+       subtitle = "")
+  
+# Finplot for finishing touches:
+
+fmxdat::finplot(Global_bonds_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", darkcol = F)
+
+
+
+
+```
+
+```{r, US and SA Real Yield Spread}
+
+SA_Bonds_Plot <- Global_bonds_data |> filter(Name %in% c("ZA")) |> left_join(usdzar |> select(-Name), by = "date") |> 
+    
+    rename( R_USD = Price) |> pivot_longer(cols = -c(date, Name), names_to = "Description", values_to = "Values") |> 
+    
+    ggplot() + 
+  
+  geom_line(aes(date, Values , color = Description), size = 0.8, alpha = 0.7) +
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "", caption = "Note:\nCalculation own",
+       title = "SA Bond Yields, Spread, and R/USD Exchange Rate",
+       subtitle = "")
+    
+# Finplot for finishing touches:
+
+fmxdat::finplot(SA_Bonds_Plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", darkcol = F)
+
+```
+
+```{r, Statistical Tables Pre and Post GFC US and SA}
+
+# Partition ZA and US yield spread data into post and pre GFC and convert to xts
+
+pre_GFC_xts <- Global_bonds_data|> filter(Name %in% c("ZA", "US")) |> select(date, Name, Spread) |> 
+     
+    filter(date <= lubridate::ymd(20081031)) |>  
+    
+    filter(date >= lubridate::ymd(19991206)) |>  # Start from ZA's first observation
+    
+    tbl_xts(cols_to_xts = Spread, spread_by = Name) 
+    
+post_GFC_xts <- Global_bonds_data|> filter(Name %in% c("ZA", "US")) |> select(date,Name ,Spread) |> 
+     
+    filter(date >= lubridate::ymd(20081031)) |> tbl_xts(cols_to_xts = Spread, spread_by = Name) 
+
+# Use performance analytics package for statistical table
+
+table_pre_GFC <- PerformanceAnalytics::table.Stats(pre_GFC_xts, ci=0.95, digits = 2)
+
+table_post_GFC <- PerformanceAnalytics::table.Stats(post_GFC_xts, ci=0.95, digits = 2)
+
+# Only select the desired stats
+
+table_pre_GFC <- table_pre_GFC[c(3,6,9,10,11,12,14,15,16),] 
+table_post_GFC <- table_post_GFC[c(3,6,9,10,11,12,14,15,16),] 
+
+# Finally summarise neatly in a table using kable
+
+final_stats_table <- 
+    
+    table_pre_GFC |>  data.frame() |>  tibble::rownames_to_column()|> 
+    left_join(table_post_GFC|>  data.frame() |>  tibble::rownames_to_column(), by = "rowname" ) |> 
+    rename(Description = rowname) |> 
+    
+    kbl(col.names = c("Description",
+                           "SA",
+                           "US",
+                           "SA", "US")) |> kable_classic(full_width = F) |> 
+    
+    add_header_above(c(" " = 1, "Pre GFC" = 2, "Post GFC" = 2))
+
+
+
+final_stats_table
+
+```
+
+```{r, SA Break-Even Inflation Yield}
+
+# Break-even inflation is the difference between the nominal yield on a fixed-rate investment and the real yield (fixed spread) on an inflation-linked investment of similar maturity and credit quality. If inflation averages more than the break-even, the inflation-linked investment will outperform the fixed-rate.
+
+# Find the monthly values of BE Infl Yiels to compare to monthly inflation data 
+
+BE_Infl_adj <- BE_Infl |> mutate(YearMonth = format(date, "%Y-%m")) |> 
+    
+    group_by(YearMonth) |> filter(date == last(date)) |> 
+    
+    ungroup() |> rename(BEI = Price)|> select(YearMonth, BEI)
+
+# Notice that the number of days withing the BE inflation set is incorrect, so I rather use YearMonth as common column, 
+# And then utilise the dateconverter command. 
+
+BEI_infl_plot <- ZA_Infl |> mutate(YearMonth = format(date, "%Y-%m") ) |> 
+    
+    select(YearMonth, Price) |> rename(Inflation = Price) |> 
+    
+    right_join(BE_Infl_adj, by = "YearMonth") |> 
+    
+    mutate(date = dateconverter(as.Date("2012-05-01"), as.Date("2021-10-29"), "calendarEOM")) |> 
+    
+    select(-YearMonth) |> 
+    
+    pivot_longer(cols = -date, names_to = "Name", values_to = "Values") |> 
+    
+     ggplot() + 
+  
+  geom_line(aes(date, Values , color = Name), size = 0.8, alpha = 0.7) +
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "%", caption = "Note:\nCalculation own",
+       title = "SA Break-Even Inflation Yield Versus Average Inflation Rate",
+       subtitle = "")
+
+# Finplot for finishing touches:
+
+fmxdat::finplot(BEI_infl_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", darkcol = F)
 
 ```
 
 
 
 
-
-
-
-
+# Question 3 
 
 
 
