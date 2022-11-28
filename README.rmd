@@ -6,11 +6,9 @@ output:
 
 # Purpose
 
-Purpose of this work folder.
+The purpose of this work folder is to provide a sanitized workflow for the code and data wrangling underlying the Financial Econometrics 871 practical exam before compiling the final reports in pdf formats as given above.
 
-Ideally store a minimum working example data set in data folder.
-
-Add binary files in bin, and closed R functions in code. Human Readable settings files (e.g. csv) should be placed in settings/
+To get started..
 
 
 ```{r, echo=FALSE}
@@ -29,8 +27,10 @@ pacman::p_load("tidyverse","fmxdat", "dplyr", "rmsfuns", "PerformanceAnalytics",
 
 # Question 1
 
-NOTE TO SELF --> FIGURE OUT HOW TO LET A FEW ACTIVE FUNDS REPRESENT THE ENTIRE SAMPLE, IN ORDER TO COMPARE. IE, EW PORTF? PCA? CLUSTER?
+The purpose of this question is to prepare a presentation where I showcast the performance of my fund (called Our Fund
+), specifically putting my fund’s performance into perspective by comparing it to the benchmark (Capped SWIX) as well as to industry peers (ASISA active managers).
 
+## Loading data
 
 ```{r, Loading Data}
 
@@ -44,6 +44,9 @@ AI_Fund <- read_rds("data/AI_Max_Fund.rds") # My Systematic AI Fund. Monthly obs
 
 ```
 
+## Rolling 3 Year Annualized Returns Comparisson
+
+To plot the Rolling 3 Year Annualized Returns, I start by merging the three datasets, calculate the Rolling 3 Year Annualized Returns, determine the 90, 75, 50, 25, and 10 percent percentiles. Thereafter, I graph the rolling returns of Our Fund versus the benchmark Capped SWIX (J433) versus the ASISA Percentiles.
 
 ```{r, Rolling 3 Year Annualized Returns}
 
@@ -119,6 +122,10 @@ Comparisson_plot <- Comparisson_df_plot |>
   fmxdat::finplot(Comparisson_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", )
 
 ```
+
+## Excess Returns and Tracking Error Comparison
+
+Next I annualize the returns on a 15 year basis, and plot the Excess Returns over the benchmark (Capped SWIX) to the Tracking Error over the past 90 months. 
 
 ```{r, Tracking Errors}
 
@@ -204,10 +211,15 @@ Excess_returns_plot <- Excess_returns_df |>
 ```
 
 
-
-
 # Question 2
 
+Economists recently pointed out that the current yield spreads in local mid to longer dated
+bond yields have since 2020 been the highest in decades.
+
+Using the data/SA Bonds.rds file, I conduct an analysis of the current yield spreads in the local
+bond market. In addition, I compare the local spread to comparable international spreads, observe the correlation between the local bond spreads and the USD-ZAR level, as well as consider the SA 10 Year Break-Even inflation estimate.
+
+## Loading data
 
 ```{r, Data Import}
 
@@ -220,6 +232,10 @@ ZA_Infl <- read_rds("data/ZA_Infl.rds")
 IV <- read_rds("data/IV.rds")
 
 ```
+
+## Global Bond Market Yields
+
+Conduct data wrangling to get the 2Yr and 10Yr global yields and their spreads in one tbl..
 
 ```{r, Global Bond Yield Spreads Data Wrangling}
 
@@ -264,6 +280,8 @@ Global_bonds_data <- inner_join(bonds_2y_adj, bonds_10y_adj, by= c("date", "Name
 
 ```
 
+And finally the plot..
+
 ```{r, Global Bond Yield Spreads Plot}
 
 Global_bonds_plot <-    Global_bonds_data |> select(date,Name ,Spread) |> 
@@ -292,6 +310,13 @@ fmxdat::finplot(Global_bonds_plot, x.vert = T, x.date.type = "%Y", x.date.dist =
 
 ```
 
+In analyzing the above plot, the SA Bond yield spread has been significantly more volatile than those of Germany, China, the US, and Japan, while having less volatility in the last few years than Brazil. Visually confirming the notion that the current yield spreads in local mid to longer dated bond yields have since 2020 been the highest in decades. 
+
+
+## SA Bond Yields, Spread, and ZAR/USD Exchange Rate
+
+I now plot the SA bond yield spreads together with the ZAR/USD exchange rate. It is evident that  the comovements between the ZAR/USD and the SA bonds yield spread was rather strong, however, between the periods of 2010 and 2016 this positive correlation has diminished, likely due to the large open market asset purchases by the FED that distorts the international spillovers. 
+
 ```{r, US and SA Real Yield Spread}
 
 SA_Bonds_Plot <- Global_bonds_data |> filter(Name %in% c("ZA")) |> left_join(usdzar |> select(-Name), by = "date") |> 
@@ -310,7 +335,7 @@ SA_Bonds_Plot <- Global_bonds_data |> filter(Name %in% c("ZA")) |> left_join(usd
   fmxdat::fmx_cols() + 
   
   labs(x = "", y = "", caption = "Note:\nCalculation own",
-       title = "SA Bond Yields, Spread, and R/USD Exchange Rate",
+       title = "SA Bond Yields, Spread, and ZAR/USD Exchange Rate",
        subtitle = "")
     
 # Finplot for finishing touches:
@@ -318,6 +343,10 @@ SA_Bonds_Plot <- Global_bonds_data |> filter(Name %in% c("ZA")) |> left_join(usd
 fmxdat::finplot(SA_Bonds_Plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", darkcol = F)
 
 ```
+
+## Statistics comparison pre and post GFC
+
+Now I compare the SA vs US Bond Yields Spread statistics pre GFC vs post GFC to see whether it has changed significantly. Overall, considering the SA and US separately and rather loosely, the volatility in the SA bond yield has remained rather stable comparing it pre and post GFC.
 
 ```{r, Statistical Tables Pre and Post GFC US and SA}
 
@@ -367,6 +396,10 @@ final_stats_table
 
 ```
 
+## SA Break-Even inflation yield estimate
+
+Next, I analyse the SA Break-Even inflation yield estimate and compare it to the SA inflation rate. Break-even inflation is the difference between the nominal yield on a fixed-rate investment and the real yield (fixed spread) on an inflation-linked investment of similar maturity and credit quality. If inflation averages more than the break-even, the inflation-linked investment will outperform the fixed-rate.
+
 ```{r, SA Break-Even Inflation Yield}
 
 # Break-even inflation is the difference between the nominal yield on a fixed-rate investment and the real yield (fixed spread) on an inflation-linked investment of similar maturity and credit quality. If inflation averages more than the break-even, the inflation-linked investment will outperform the fixed-rate.
@@ -415,13 +448,15 @@ fmxdat::finplot(BEI_infl_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 
 
 ```
 
-
+From the plot above, the SA average inflation rate has not surpassed the BE inflation yield estimate since 2014, indicating that fixed investment has been firmly preferred over the index-linked bond investment. 
 
 
 # Question 3 
 
+The purpose of this question is to, using the information on the ALSI (J200) and SWIX (J400) top 40 Indexes, compare the SWIX and ALSI methodologies by looking at the performance of different sector exposures and stock concentrations over
+time.
 
-
+## Data import
 
 ```{r, Data import}
 
@@ -438,6 +473,11 @@ T40_a <- T40 |> select(-Short.Name) |>
     mutate(Tickers = gsub(" SJ Equity", "", Tickers))  # Remove clutter in Tickers names
 
 ```
+
+## ALSI and SWIX weighted portfolio cumulative returns
+
+I first plot the ALSI and SWIX weighted portfolio cumulative returns, following some tedious data wrangling. 
+
 
 ```{r, ALSI and SWIX wieghted port returns by hand}
 
@@ -539,9 +579,18 @@ fmxdat::finplot(Indexes_Cum_ret_plot, x.vert = T, x.date.type = "%Y", x.date.dis
 
 ```
 
+From the plot above, the cumulative weighted returns for the ALSI and SWIX indexes are strickingly similar, however, since the onset of COVID-19, the ALSI has achieved higher returns.
+
+##  Weighted return contribition of each sector
+
+I now create the final tbl that includes the weighted return contribution of each sector  to the overall weighted portfolio return (daily). From the plots produced below, the ALSI has a over time applied a larger weight to the Resources sector than the SWIX, where the SWIX applies relatively larger weights to Financials and Industrials. 
+
+The weighted contribution per sector confirms that the additional weight the ALSI applies to the Resources sector compared to the SWIX is what generated its higher returns since the onset of COVID-19. 
+
+
 ```{r, Portfolio Returns subdivided into Market Caps Contributions}
 
-# I now create the final tbl that includes the weighted return contribition of each sector  to the overall weighted portfolio return (daily) 
+
 
 df_Port_ret_final <- df_Port_ret |> arrange(date) |> 
     
@@ -607,6 +656,8 @@ SWIX_ret_sector <- df_Port_ret_final |> select(date, Sector ,SWIX_ret_sector) |>
   SWIX_RetPort_sector$contribution |> chart.CumReturns(legend.loc = "bottom")
  
 ```
+
+Pull the rebalance days, 
 
 ```{r, Rebalance days}
 
@@ -739,6 +790,18 @@ Capped_SWIX_10 %>% pull(weight) %>% max(.)
 Capped_SWIX_6 %>% pull(weight) %>% max(.) # Success!!
 
 ```
+
+
+
+
+
+## 6% and 10% Capped indexes weighted returns
+
+I now analyse the impact different capping levels would have had on both the SWIX and ALSI (6% and 10%).
+
+From the ALSI capped figure, a capping of 10% has virtually the same cumulative returns as when uncapped, with significantly lower returns when capped at 6%. This is likely due to this 6% capping most of the relatively higher returns generated from the Resources sector.
+
+On the other hand, from the SWIX capped figure, the 10% cap would have improved its return since the onset of COVID, likely due to a reduction in weighted contribution from the weaker performing Industrial and Financial sectors. 
 
 
 ```{r, Newly capped index weighted returns}
@@ -920,6 +983,15 @@ fmxdat::finplot(capping_plot_SWIX, x.vert = T, x.date.type = "%Y", x.date.dist =
 
 # Question 4
 
+For this question I using the Top 40 Index data from question 3 to calculate the concentration of returns among the
+ALSI constituents (J200) by considering it from a Principal Component Analysis (PCA) perspective. 
+
+I plot the Scree plot (percentage of explained variances) and the Cos2 plot for the constituants that explain most of the volatility (Quality of representation). 
+
+Note that; A high cos2 indicates a good representation of the variable on the principal component. Whereas a  low cos2 indicates that the variable is not perfectly represented by the PCs.
+
+## Scree plot
+
 ```{r}
 
 pacman::p_load("RiskPortfolios", "FactoMineR", "factoextra", "broom")
@@ -1039,7 +1111,14 @@ fviz_screeplot(pca, ncp=10)
 
 ```
 
-"From the plot above, we might want to stop at the fifth principal component. 87% of the information (variances) contained in the data are retained by the first five principal components."
+The plot above shows: nearly 20% of variation in the ALSI index is explained by a single component. It does not give insight into what this component or factor might be, but it tells us how this component is calculated linearly. In addition, excluding the large portion explained by the first two PC's, the remaining seven PC's accounts for roughly the same amount of variation in the ALSI. 
+
+## Cos2 plot 
+
+Given the large contribution of the first two components, I generate the cos2 plot below for the first two PC's. NPN, BHP, and AGL have high cos2 values, indicating a good representation of the variable on the first two PC's. 
+
+In conclusion; NPN, BHP, and AGL constituents explain a significant portion of the variation in the ALSI Top 40 index. 
+
 
 ```{r, cos2 plot}
 
@@ -1047,13 +1126,18 @@ fviz_cos2(pca, choice = "var", axes = 1:2, top = 10)
 
 ```
 
-Note that,
 
-A high cos2 indicates a good representation of the variable on the principal component. In this case the variable is positioned close to the circumference of the correlation circle.
-
-A low cos2 indicates that the variable is not perfectly represented by the PCs. In this case the variable is close to the center of the circle.
 
 # Question 5
+
+The purpose of this question is twofold; To comment on the following two statements:
+
+* The South African rand (ZAR) has over the past few years been one of the most volatile
+currencies;
+* The ZAR has generally performed well during periods where G10 currency carry trades
+have been favourable and these currency valuations relatively cheap. Globally, it has been
+one of the currencies that most benefit during periods where the Dollar is comparatively
+strong, indicating a risk-on sentiment.
 
 ## Loading data
 
@@ -1077,6 +1161,7 @@ print(Currency_names_full)
 
 ```
 
+
 ## Sample SD comparison of selected currencies
 
 Lets investigate the first point to comment on : "The South African rand (ZAR) has over the past few years been one of the most volatile currencies". To investigate this, I select 8 countries' currencies: Brazil, EU, India, SA, Turkey, Poland, Zambia, and the UK (The justification of these choices will be discussed in the final report), and compare their respective dollar exchange rates. 
@@ -1096,11 +1181,6 @@ Countries_to_consider <- c("Brazil","EU","India","Poland","Zambia","Turkey","Sou
 
 Curr_df <- Curr_df |> filter(Name %in% Countries_to_consider) 
 
-# Now I take their dlog in order to plot their cummulative growth w.r.t the USD
-
-Curr_df |>  ggplot() +
-    
-    geom_line(aes(date, Price, color = Name))
 
 ```
 
@@ -1244,7 +1324,7 @@ DCCPre <- dccPre(gwt_xts, include.mean = F, p=0) # Find a nice way to put this i
 
 ```
 
-I now have the estimates of volatility for each series (currency), and below I change the output to a usable Xts series for each column in gwt_xts. And I plot the Sigma (volatility) of each series. 
+
 
 ```{r}
 
@@ -1304,13 +1384,15 @@ detach("package:fmxdat", unload=TRUE)
 detach("package:rmsfuns", unload=TRUE)
 detach("package:tbl2xts", unload=TRUE)
 detach("package:ggpubr", unload=TRUE)
-detach("package:broom", unload=TRUE)
 detach("package:rstatix", unload=TRUE)
 detach("package:modelr", unload=TRUE)
+detach("package:broom", unload=TRUE)
 detach("package:tidyr", unload=TRUE)
 detach("package:dplyr", unload=TRUE)
 
 DCC <- dccFit(StdRes,type = "Engle") 
+
+pacman::p_load(tidyverse,fmxdat, rmsfuns, tbl2xts, tidyr, ggpubr, broom,rstatix, modelr )
 
 ```
 
@@ -1318,7 +1400,6 @@ DCC <- dccFit(StdRes,type = "Engle")
 
 ```{r}
 
-pacman::p_load(tidyverse,fmxdat, rmsfuns, tbl2xts, tidyr, ggpubr, broom,rstatix, modelr )
 
 Rhot <- DCC$rho.t
 # Right, so it gives us all the columns together in the form:
@@ -1400,6 +1481,3 @@ print(g2)
 
 ```
 
-
-
-# Question 6 

@@ -1,0 +1,379 @@
+\documentclass[11pt,preprint, authoryear]{elsarticle}
+
+\usepackage{lmodern}
+%%%% My spacing
+\usepackage{setspace}
+\setstretch{1.2}
+\DeclareMathSizes{12}{14}{10}{10}
+
+% Wrap around which gives all figures included the [H] command, or places it "here". This can be tedious to code in Rmarkdown.
+\usepackage{float}
+\let\origfigure\figure
+\let\endorigfigure\endfigure
+\renewenvironment{figure}[1][2] {
+    \expandafter\origfigure\expandafter[H]
+} {
+    \endorigfigure
+}
+
+\let\origtable\table
+\let\endorigtable\endtable
+\renewenvironment{table}[1][2] {
+    \expandafter\origtable\expandafter[H]
+} {
+    \endorigtable
+}
+
+
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+
+\usepackage{amssymb, amsmath, amsthm, amsfonts}
+
+\def\bibsection{\section*{References}} %%% Make "References" appear before bibliography
+
+
+\usepackage[round]{natbib}
+
+\usepackage{longtable}
+\usepackage[margin=2.3cm,bottom=2cm,top=2.5cm, includefoot]{geometry}
+\usepackage{fancyhdr}
+\usepackage[bottom, hang, flushmargin]{footmisc}
+\usepackage{graphicx}
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+\numberwithin{table}{section}
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{1.3ex plus 0.5ex minus 0.3ex}
+\usepackage{textcomp}
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+\usepackage{array}
+\newcolumntype{x}[1]{>{\centering\arraybackslash\hspace{0pt}}p{#1}}
+
+%%%%  Remove the "preprint submitted to" part. Don't worry about this either, it just looks better without it:
+\makeatletter
+\def\ps@pprintTitle{%
+  \let\@oddhead\@empty
+  \let\@evenhead\@empty
+  \let\@oddfoot\@empty
+  \let\@evenfoot\@oddfoot
+}
+\makeatother
+
+ \def\tightlist{} % This allows for subbullets!
+
+\usepackage{hyperref}
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=blue,
+            pdfborder={0 0 0}}
+
+
+% The following packages allow huxtable to work:
+\usepackage{siunitx}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{calc}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{caption}
+
+
+\newenvironment{columns}[1][]{}{}
+
+\newenvironment{column}[1]{\begin{minipage}{#1}\ignorespaces}{%
+\end{minipage}
+\ifhmode\unskip\fi
+\aftergroup\useignorespacesandallpars}
+
+\def\useignorespacesandallpars#1\ignorespaces\fi{%
+#1\fi\ignorespacesandallpars}
+
+\makeatletter
+\def\ignorespacesandallpars{%
+  \@ifnextchar\par
+    {\expandafter\ignorespacesandallpars\@gobble}%
+    {}%
+}
+\makeatother
+
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newenvironment{CSLReferences}%
+  {\setlength{\parindent}{0pt}%
+  \everypar{\setlength{\hangindent}{\cslhangindent}}\ignorespaces}%
+  {\par}
+
+
+\urlstyle{same}  % don't use monospace font for urls
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{5}
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+
+%%% Include extra packages specified by user
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+%%% Hard setting column skips for reports - this ensures greater consistency and control over the length settings in the document.
+%% page layout
+%% paragraphs
+\setlength{\baselineskip}{12pt plus 0pt minus 0pt}
+\setlength{\parskip}{12pt plus 0pt minus 0pt}
+\setlength{\parindent}{0pt plus 0pt minus 0pt}
+%% floats
+\setlength{\floatsep}{12pt plus 0 pt minus 0pt}
+\setlength{\textfloatsep}{20pt plus 0pt minus 0pt}
+\setlength{\intextsep}{14pt plus 0pt minus 0pt}
+\setlength{\dbltextfloatsep}{20pt plus 0pt minus 0pt}
+\setlength{\dblfloatsep}{14pt plus 0pt minus 0pt}
+%% maths
+\setlength{\abovedisplayskip}{12pt plus 0pt minus 0pt}
+\setlength{\belowdisplayskip}{12pt plus 0pt minus 0pt}
+%% lists
+\setlength{\topsep}{10pt plus 0pt minus 0pt}
+\setlength{\partopsep}{3pt plus 0pt minus 0pt}
+\setlength{\itemsep}{5pt plus 0pt minus 0pt}
+\setlength{\labelsep}{8mm plus 0mm minus 0mm}
+\setlength{\parsep}{\the\parskip}
+\setlength{\listparindent}{\the\parindent}
+%% verbatim
+\setlength{\fboxsep}{5pt plus 0pt minus 0pt}
+
+
+
+\begin{document}
+
+
+
+\begin{frontmatter}  %
+
+\title{Financial Econometrics 871 Practical Exam 2022: Question 3}
+
+% Set to FALSE if wanting to remove title (for submission)
+
+
+
+
+\author[Add1]{Tian Cater}
+\ead{19025831@sun.ac.za}
+
+
+
+
+
+\address[Add1]{University of Stellenbosch, Western Cape, South
+Africa\footnote{2022-11-27}}
+
+
+\begin{abstract}
+\small{
+To answer this question, I use the information on the ALSI (J200) and
+SWIX (J400) top 40 Indexes and compare the SWIX and ALSI methodologies
+by looking at the performance of different sector exposures and stock
+concentrations over time. The findings show that the (uncapped) ALSI has
+performed relatively better since the onset of COVID-19 than the SWIX
+and can be attributed to a higher weight assigned to the
+better-performing Resources sector. In addition, through analysing the
+impact that 6\% and 10\% capping levels would have had on both the SWIX
+and ALSI, it is apparent that a 6\% cap on the ALSI would have
+significantly reduced its performance in the past few years due to
+slicing the weights on the higher returning Resources sector. On the
+other hand, the 10\% cap on SWIX would have improved its return since
+the onset of COVID, likely due to a reduction in weighted contribution
+from the weaker-performing Industrial and Financial sectors.
+}
+\end{abstract}
+
+\vspace{1cm}
+
+
+
+
+
+\vspace{0.5cm}
+
+\end{frontmatter}
+
+
+
+%________________________
+% Header and Footers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagestyle{fancy}
+\chead{}
+\rhead{Question 3}
+\lfoot{}
+\rfoot{\footnotesize Page \thepage}
+\lhead{}
+%\rfoot{\footnotesize Page \thepage } % "e.g. Page 2"
+\cfoot{}
+
+%\setlength\headheight{30pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%________________________
+
+\headsep 35pt % So that header does not go over title
+
+
+
+
+\hypertarget{alsi-and-swix-uncapped-weighted-portfolio-returns}{%
+\section{ALSI and SWIX (uncapped) Weighted Portfolio
+Returns}\label{alsi-and-swix-uncapped-weighted-portfolio-returns}}
+
+Figure \ref{Figure1} plots the weighted (uncapped) cumulative returns
+series for the ALSI and SWIX indexes. The cumulative weighted returns
+for the ALSI and SWIX indexes are strikingly similar, however, since the
+onset of COVID-19, the ALSI has achieved higher returns.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question3_files/figure-latex/Indexes_Cum_ret_plot-1} 
+
+}
+
+\caption{Cumulative Returns of ALSI and SWIX Indexes Per Sector. \label{Figure1}}\label{fig:Indexes_Cum_ret_plot}
+\end{figure}
+
+\hypertarget{weighted-return-contribition-per-sector}{%
+\section{Weighted Return Contribition per
+Sector}\label{weighted-return-contribition-per-sector}}
+
+In order to shed some light on SWIX's relatively weaker performance
+since the onset of COVID, I analyse the dynamic weighted contribution of
+of each sector to the indexes. Figures \ref{Figure2} and \ref{Figure3}
+shows the dynamic weight contribution to the ALSI and SWIX portfolios,
+respectively.
+
+In considering the ALSI in Figure \ref{Figure2}, a capping of 10\% has
+virtually the same cumulative returns as when uncapped, with
+significantly lower returns when capped at 6\%. This is likely due to
+this 6\% capping most of the relatively higher returns generated from
+the Resources sector. On the other hand, from the SWIX in Figure
+\ref{Figure3}, the 10\% cap would have improved its return since the
+onset of COVID, most likely due to a reduction in weighted contribution
+from the weaker performing Industrial and Financial sectors.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question3_files/figure-latex/ALSI weights plot-1} 
+
+}
+
+\caption{Dynamic Weight Contribution to ALSI Portfolio Per Sector. \label{Figure2}}\label{fig:ALSI weights plot}
+\end{figure}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question3_files/figure-latex/SWIX weights plot-1} 
+
+}
+
+\caption{Dynamic Weight Contribution to SWIX Portfolio. \label{Figure3}}\label{fig:SWIX weights plot}
+\end{figure}
+
+Figures \ref{Figure4} and \ref{Figure5} confirms the analyses above.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question3_files/figure-latex/ALSI contr plot-1} 
+
+}
+
+\caption{Dynamic Weighted Return Contribution to SWIX Portfolio Per Sector. \label{Figure4}}\label{fig:ALSI contr plot}
+\end{figure}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question3_files/figure-latex/SWIX contr plot-1} 
+
+}
+
+\caption{Dynamic Weighted Return Contribution to SWIX Portfolio Per Sector. \label{Figure5}}\label{fig:SWIX contr plot}
+\end{figure}
+
+\hypertarget{counterfactual-6-and-10-capped-alsi-and-swix-returns}{%
+\section{Counterfactual 6\% and 10\% Capped ALSI and SWIX
+Returns}\label{counterfactual-6-and-10-capped-alsi-and-swix-returns}}
+
+Figures \ref{Figure6} and \ref{Figure7} shows the counterfactual impact
+that 6\% and 10\% capping levels would have had on both the SWIX and
+ALSI, respectively. In investigating these figures, it is apparent that
+a 6\% cap on the ALSI would have significantly reduced its performance
+in the past few years due to slicing the weights on the higher returning
+Resources sector. On the other hand, the 10\% cap on SWIX would have
+improved its return since the onset of COVID, likely due to a reduction
+in weighted contribution from the weaker-performing Industrial and
+Financial sectors.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question3_files/figure-latex/ALSI capping plot-1} 
+
+}
+
+\caption{Cumulative Returns of ALSI Capped at 6 and 10 Percent. \label{Figure6}}\label{fig:ALSI capping plot}
+\end{figure}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question3_files/figure-latex/SWIX capping plot-1} 
+
+}
+
+\caption{Cumulative Returns of SWIX Capped at 6 and 10 Percent. \label{Figure7}}\label{fig:SWIX capping plot}
+\end{figure}
+
+\newpage
+
+\hypertarget{references}{%
+\section*{References}\label{references}}
+\addcontentsline{toc}{section}{References}
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{0}{0}
+\end{CSLReferences}
+
+\bibliography{Tex/ref}
+
+
+
+
+
+\end{document}

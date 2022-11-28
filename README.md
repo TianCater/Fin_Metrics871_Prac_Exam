@@ -1,11 +1,12 @@
 <h1 id="purpose">Purpose</h1>
-<p>Purpose of this work folder.</p>
-<p>Ideally store a minimum working example data set in data folder.</p>
-<p>Add binary files in bin, and closed R functions in code. Human
-Readable settings files (e.g. csv) should be placed in settings/</p>
+<p>The purpose of this work folder is to provide a sanitized workflow
+for the code and data wrangling underlying the Financial Econometrics
+871 practical exam before compiling the final reports in pdf formats as
+given above.</p>
+<p>To get started..</p>
 <pre><code>##          used (Mb) gc trigger (Mb) max used (Mb)
-## Ncells 473671 25.3    1031222 55.1   644245 34.5
-## Vcells 853512  6.6    8388608 64.0  1635428 12.5</code></pre>
+## Ncells 473719 25.3    1031360 55.1   644245 34.5
+## Vcells 855344  6.6    8388608 64.0  1635428 12.5</code></pre>
 <pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
 ## ✔ ggplot2 3.4.0      ✔ purrr   0.3.5 
 ## ✔ tibble  3.1.8      ✔ dplyr   1.0.10
@@ -15,8 +16,12 @@ Readable settings files (e.g. csv) should be placed in settings/</p>
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()</code></pre>
 <h1 id="question-1">Question 1</h1>
-<p>NOTE TO SELF –&gt; FIGURE OUT HOW TO LET A FEW ACTIVE FUNDS REPRESENT
-THE ENTIRE SAMPLE, IN ORDER TO COMPARE. IE, EW PORTF? PCA? CLUSTER?</p>
+<p>The purpose of this question is to prepare a presentation where I
+showcast the performance of my fund (called Our Fund ), specifically
+putting my fund’s performance into perspective by comparing it to the
+benchmark (Capped SWIX) as well as to industry peers (ASISA active
+managers).</p>
+<h2 id="loading-data">Loading data</h2>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ASISA <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/ASISA.rds&quot;</span>) <span class="co"># ASISA Active Managers. Notice that there are 227 different actively managed funds.</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>                                    <span class="co"># Monthly observations, 2002-11-30 to 2022-10-31</span></span>
@@ -24,6 +29,13 @@ THE ENTIRE SAMPLE, IN ORDER TO COMPARE. IE, EW PORTF? PCA? CLUSTER?</p>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>BM <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/Capped_SWIX.rds&quot;</span>) <span class="co"># Benchmark: Capped Swix. Monthly observations, 1999-12-31 to 2022-10-31</span></span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>AI_Fund <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/AI_Max_Fund.rds&quot;</span>) <span class="co"># My Systematic AI Fund. Monthly observations, 2003-01-31 to 2022-10-31</span></span></code></pre></div>
+<h2 id="rolling-3-year-annualized-returns-comparisson">Rolling 3 Year
+Annualized Returns Comparisson</h2>
+<p>To plot the Rolling 3 Year Annualized Returns, I start by merging the
+three datasets, calculate the Rolling 3 Year Annualized Returns,
+determine the 90, 75, 50, 25, and 10 percent percentiles. Thereafter, I
+graph the rolling returns of Our Fund versus the benchmark Capped SWIX
+(J433) versus the ASISA Percentiles.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(RcppRoll)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -97,6 +109,11 @@ THE ENTIRE SAMPLE, IN ORDER TO COMPARE. IE, EW PORTF? PCA? CLUSTER?</p>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  fmxdat<span class="sc">::</span><span class="fu">finplot</span>(Comparisson_plot, <span class="at">x.vert =</span> T, <span class="at">x.date.type =</span> <span class="st">&quot;%Y&quot;</span>, <span class="at">x.date.dist =</span> <span class="st">&quot;2 years&quot;</span>, )</span></code></pre></div>
 <p><img
 src="README_files/figure-html/Rolling%203%20Year%20Annualized%20Returns-1.png" /><!-- --></p>
+<h2 id="excess-returns-and-tracking-error-comparison">Excess Returns and
+Tracking Error Comparison</h2>
+<p>Next I annualize the returns on a 15 year basis, and plot the Excess
+Returns over the benchmark (Capped SWIX) to the Tracking Error over the
+past 90 months.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>funds_xts <span class="ot">&lt;-</span> df_rolling <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span>(Name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;J433&quot;</span>))) <span class="sc">|&gt;</span> </span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(date <span class="sc">&gt;=</span> lubridate<span class="sc">::</span><span class="fu">ymd</span>(<span class="st">&quot;2007-10-31&quot;</span>) ) <span class="sc">|&gt;</span> <span class="co"># Filter dates to calc annualized, 15 year basis, returns below</span></span>
@@ -176,6 +193,15 @@ src="README_files/figure-html/Rolling%203%20Year%20Annualized%20Returns-1.png" /
 <p><img
 src="README_files/figure-html/Tracking%20Errors-1.png" /><!-- --></p>
 <h1 id="question-2">Question 2</h1>
+<p>Economists recently pointed out that the current yield spreads in
+local mid to longer dated bond yields have since 2020 been the highest
+in decades.</p>
+<p>Using the data/SA Bonds.rds file, I conduct an analysis of the
+current yield spreads in the local bond market. In addition, I compare
+the local spread to comparable international spreads, observe the
+correlation between the local bond spreads and the USD-ZAR level, as
+well as consider the SA 10 Year Break-Even inflation estimate.</p>
+<h2 id="loading-data-1">Loading data</h2>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>SA_bonds <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/SA_Bonds.rds&quot;</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>BE_Infl <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/BE_Infl.rds&quot;</span>)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>bonds_2y <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/bonds_2y.rds&quot;</span>)</span>
@@ -183,6 +209,9 @@ src="README_files/figure-html/Tracking%20Errors-1.png" /><!-- --></p>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>usdzar <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/usdzar.rds&quot;</span>)</span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>ZA_Infl <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/ZA_Infl.rds&quot;</span>)</span>
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>IV <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/IV.rds&quot;</span>)</span></code></pre></div>
+<h2 id="global-bond-market-yields">Global Bond Market Yields</h2>
+<p>Conduct data wrangling to get the 2Yr and 10Yr global yields and
+their spreads in one tbl..</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>Countries_to_compare <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Germany&quot;</span>, <span class="st">&quot;ZA&quot;</span>, <span class="st">&quot;US&quot;</span>, <span class="st">&quot;CHINA&quot;</span>, <span class="st">&quot;Japan&quot;</span>, <span class="st">&quot;Brazil&quot;</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>bonds_10y_adj <span class="ot">&lt;-</span> bonds_10y <span class="sc">|&gt;</span> <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> <span class="st">&quot;Name&quot;</span>, <span class="at">values_from =</span> <span class="st">&quot;Bond_10Yr&quot;</span>) <span class="sc">|&gt;</span> </span>
@@ -221,6 +250,7 @@ src="README_files/figure-html/Tracking%20Errors-1.png" /><!-- --></p>
 <span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>Global_bonds_data <span class="ot">&lt;-</span> <span class="fu">inner_join</span>(bonds_2y_adj, bonds_10y_adj, <span class="at">by=</span> <span class="fu">c</span>(<span class="st">&quot;date&quot;</span>, <span class="st">&quot;Name&quot;</span>)) <span class="sc">|&gt;</span> </span>
 <span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Spread =</span> Bond_10Yr <span class="sc">-</span> Bond_2Yr)</span></code></pre></div>
+<p>And finally the plot..</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>Global_bonds_plot <span class="ot">&lt;-</span>    Global_bonds_data <span class="sc">|&gt;</span> <span class="fu">select</span>(date,Name ,Spread) <span class="sc">|&gt;</span> </span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
@@ -244,6 +274,20 @@ src="README_files/figure-html/Tracking%20Errors-1.png" /><!-- --></p>
 <pre><code>## Warning: Removed 13276 rows containing missing values (`geom_line()`).</code></pre>
 <p><img
 src="README_files/figure-html/Global%20Bond%20Yield%20Spreads%20Plot-1.png" /><!-- --></p>
+<p>In analyzing the above plot, the SA Bond yield spread has been
+significantly more volatile than those of Germany, China, the US, and
+Japan, while having less volatility in the last few years than Brazil.
+Visually confirming the notion that the current yield spreads in local
+mid to longer dated bond yields have since 2020 been the highest in
+decades.</p>
+<h2 id="sa-bond-yields-spread-and-zarusd-exchange-rate">SA Bond Yields,
+Spread, and ZAR/USD Exchange Rate</h2>
+<p>I now plot the SA bond yield spreads together with the ZAR/USD
+exchange rate. It is evident that the comovements between the ZAR/USD
+and the SA bonds yield spread was rather strong, however, between the
+periods of 2010 and 2016 this positive correlation has diminished,
+likely due to the large open market asset purchases by the FED that
+distorts the international spillovers.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>SA_Bonds_Plot <span class="ot">&lt;-</span> Global_bonds_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(Name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;ZA&quot;</span>)) <span class="sc">|&gt;</span> <span class="fu">left_join</span>(usdzar <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="sc">-</span>Name), <span class="at">by =</span> <span class="st">&quot;date&quot;</span>) <span class="sc">|&gt;</span> </span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>( <span class="at">R_USD =</span> Price) <span class="sc">|&gt;</span> <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="sc">-</span><span class="fu">c</span>(date, Name), <span class="at">names_to =</span> <span class="st">&quot;Description&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;Values&quot;</span>) <span class="sc">|&gt;</span> </span>
@@ -260,7 +304,7 @@ src="README_files/figure-html/Global%20Bond%20Yield%20Spreads%20Plot-1.png" /><!
 <span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  fmxdat<span class="sc">::</span><span class="fu">fmx_cols</span>() <span class="sc">+</span> </span>
 <span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;&quot;</span>, <span class="at">y =</span> <span class="st">&quot;&quot;</span>, <span class="at">caption =</span> <span class="st">&quot;Note:</span><span class="sc">\n</span><span class="st">Calculation own&quot;</span>,</span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;SA Bond Yields, Spread, and R/USD Exchange Rate&quot;</span>,</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;SA Bond Yields, Spread, and ZAR/USD Exchange Rate&quot;</span>,</span>
 <span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;&quot;</span>)</span>
 <span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Finplot for finishing touches:</span></span>
@@ -269,6 +313,13 @@ src="README_files/figure-html/Global%20Bond%20Yield%20Spreads%20Plot-1.png" /><!
 <pre><code>## Warning: Removed 7770 rows containing missing values (`geom_line()`).</code></pre>
 <p><img
 src="README_files/figure-html/US%20and%20SA%20Real%20Yield%20Spread-1.png" /><!-- --></p>
+<h2 id="statistics-comparison-pre-and-post-gfc">Statistics comparison
+pre and post GFC</h2>
+<p>Now I compare the SA vs US Bond Yields Spread statistics pre GFC vs
+post GFC to see whether it has changed significantly. Overall,
+considering the SA and US separately and rather loosely, the volatility
+in the SA bond yield has remained rather stable comparing it pre and
+post GFC.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Partition ZA and US yield spread data into post and pre GFC and convert to xts</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>pre_GFC_xts <span class="ot">&lt;-</span> Global_bonds_data<span class="sc">|&gt;</span> <span class="fu">filter</span>(Name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;ZA&quot;</span>, <span class="st">&quot;US&quot;</span>)) <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Name, Spread) <span class="sc">|&gt;</span> </span>
@@ -502,6 +553,15 @@ Kurtosis
 </tr>
 </tbody>
 </table>
+<h2 id="sa-break-even-inflation-yield-estimate">SA Break-Even inflation
+yield estimate</h2>
+<p>Next, I analyse the SA Break-Even inflation yield estimate and
+compare it to the SA inflation rate. Break-even inflation is the
+difference between the nominal yield on a fixed-rate investment and the
+real yield (fixed spread) on an inflation-linked investment of similar
+maturity and credit quality. If inflation averages more than the
+break-even, the inflation-linked investment will outperform the
+fixed-rate.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Break-even inflation is the difference between the nominal yield on a fixed-rate investment and the real yield (fixed spread) on an inflation-linked investment of similar maturity and credit quality. If inflation averages more than the break-even, the inflation-linked investment will outperform the fixed-rate.</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the monthly values of BE Infl Yiels to compare to monthly inflation data </span></span>
@@ -547,7 +607,16 @@ Kurtosis
 <span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>fmxdat<span class="sc">::</span><span class="fu">finplot</span>(BEI_infl_plot, <span class="at">x.vert =</span> T, <span class="at">x.date.type =</span> <span class="st">&quot;%Y&quot;</span>, <span class="at">x.date.dist =</span> <span class="st">&quot;2 years&quot;</span>, <span class="at">darkcol =</span> F)</span></code></pre></div>
 <p><img
 src="README_files/figure-html/SA%20Break-Even%20Inflation%20Yield-1.png" /><!-- --></p>
+<p>From the plot above, the SA average inflation rate has not surpassed
+the BE inflation yield estimate since 2014, indicating that fixed
+investment has been firmly preferred over the index-linked bond
+investment.</p>
 <h1 id="question-3">Question 3</h1>
+<p>The purpose of this question is to, using the information on the ALSI
+(J200) and SWIX (J400) top 40 Indexes, compare the SWIX and ALSI
+methodologies by looking at the performance of different sector
+exposures and stock concentrations over time.</p>
+<h2 id="data-import">Data import</h2>
 <div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>T40 <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/T40.rds&quot;</span>) <span class="co"># There are 92 stocks in this tbl</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>RebDays <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/Rebalance_days.rds&quot;</span>)</span>
@@ -559,6 +628,10 @@ src="README_files/figure-html/SA%20Break-Even%20Inflation%20Yield-1.png" /><!-- 
 <span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>T40_a <span class="ot">&lt;-</span> T40 <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="sc">-</span>Short.Name) <span class="sc">|&gt;</span> </span>
 <span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Tickers =</span> <span class="fu">gsub</span>(<span class="st">&quot; SJ Equity&quot;</span>, <span class="st">&quot;&quot;</span>, Tickers))  <span class="co"># Remove clutter in Tickers names</span></span></code></pre></div>
+<h2 id="alsi-and-swix-weighted-portfolio-cumulative-returns">ALSI and
+SWIX weighted portfolio cumulative returns</h2>
+<p>I first plot the ALSI and SWIX weighted portfolio cumulative returns,
+following some tedious data wrangling.</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I generate a tbl calculating both Indexes weighted returns by hand</span></span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>df_Port_ret <span class="ot">&lt;-</span> T40_a <span class="sc">|&gt;</span> </span>
@@ -647,64 +720,75 @@ src="README_files/figure-html/SA%20Break-Even%20Inflation%20Yield-1.png" /><!-- 
 ## Adding another scale for colour, which will replace the existing scale.</code></pre>
 <p><img
 src="README_files/figure-html/Portfolios%20cumulative%20returns-1.png" /><!-- --></p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I now create the final tbl that includes the weighted return contribition of each sector  to the overall weighted portfolio return (daily) </span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>df_Port_ret_final <span class="ot">&lt;-</span> df_Port_ret <span class="sc">|&gt;</span> <span class="fu">arrange</span>(date) <span class="sc">|&gt;</span> </span>
+<p>From the plot above, the cumulative weighted returns for the ALSI and
+SWIX indexes are strickingly similar, however, since the onset of
+COVID-19, the ALSI has achieved higher returns.</p>
+<h2 id="weighted-return-contribition-of-each-sector">Weighted return
+contribition of each sector</h2>
+<p>I now create the final tbl that includes the weighted return
+contribution of each sector to the overall weighted portfolio return
+(daily). From the plots produced below, the ALSI has a over time applied
+a larger weight to the Resources sector than the SWIX, where the SWIX
+applies relatively larger weights to Financials and Industrials.</p>
+<p>The weighted contribution per sector confirms that the additional
+weight the ALSI applies to the Resources sector compared to the SWIX is
+what generated its higher returns since the onset of COVID-19.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>df_Port_ret_final <span class="ot">&lt;-</span> df_Port_ret <span class="sc">|&gt;</span> <span class="fu">arrange</span>(date) <span class="sc">|&gt;</span> </span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(date, Sector) <span class="sc">|&gt;</span>       <span class="co"># Group by Market Cap to calc each category&#39;s contr to wieghted portf return</span></span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(date, Sector) <span class="sc">|&gt;</span>       <span class="co"># Group by Market Cap to calc each category&#39;s contr to wieghted portf return</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ALSI_wght_sector =</span> <span class="fu">coalesce</span>(J400, <span class="dv">0</span>)) <span class="sc">|&gt;</span> <span class="co"># Make NA&#39;s 0 to use PA later</span></span>
 <span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ALSI_wght_sector =</span> <span class="fu">coalesce</span>(J400, <span class="dv">0</span>)) <span class="sc">|&gt;</span> <span class="co"># Make NA&#39;s 0 to use PA later</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">SWIX_wght_sector =</span> <span class="fu">coalesce</span>(J200, <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
 <span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">SWIX_wght_sector =</span> <span class="fu">coalesce</span>(J200, <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ALSI_wret =</span> <span class="fu">coalesce</span>(ALSI_wret, <span class="dv">0</span>)) <span class="sc">|&gt;</span> </span>
 <span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ALSI_wret =</span> <span class="fu">coalesce</span>(ALSI_wret, <span class="dv">0</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">SWIX_wret =</span> <span class="fu">coalesce</span>(SWIX_wret, <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
 <span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">SWIX_wret =</span> <span class="fu">coalesce</span>(SWIX_wret, <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ALSI_ret_sector =</span> <span class="fu">sum</span>(ALSI_wret, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span>  <span class="co"># The weight-contribution of each sector on each day</span></span>
 <span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ALSI_ret_sector =</span> <span class="fu">sum</span>(ALSI_wret, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span>  <span class="co"># The weight-contribution of each sector on each day</span></span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">SWIX_ret_sector =</span> <span class="fu">sum</span>(SWIX_wret, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span></span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ALSI_wght_sector =</span> <span class="fu">sum</span>(J400, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span>  <span class="co"># The weighted return contribution of each sector on each day</span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">SWIX_ret_sector =</span> <span class="fu">sum</span>(SWIX_wret, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ALSI_wght_sector =</span> <span class="fu">sum</span>(J400, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span>  <span class="co"># The weighted return contribution of each sector on each day</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">SWIX_wght_sector =</span> <span class="fu">sum</span>(J200, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span></span>
 <span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">SWIX_wght_sector =</span> <span class="fu">sum</span>(J200, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span></span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>()</span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>ALSI_wght_sector <span class="ot">&lt;-</span>  df_Port_ret_final <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Sector ,ALSI_wght_sector) <span class="sc">|&gt;</span> <span class="fu">group_by</span>(Sector) <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl_xts</span>(<span class="at">cols_to_xts =</span> ALSI_wght_sector, <span class="at">spread_by =</span> Sector)</span>
-<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>SWIX_wght_sector <span class="ot">&lt;-</span> df_Port_ret_final <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Sector ,SWIX_wght_sector) <span class="sc">|&gt;</span> <span class="fu">group_by</span>(Sector) <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl_xts</span>(<span class="at">cols_to_xts =</span> SWIX_wght_sector, <span class="at">spread_by =</span> Sector)</span>
-<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>ALSI_ret_sector <span class="ot">&lt;-</span> df_Port_ret_final <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Sector ,ALSI_ret_sector) <span class="sc">|&gt;</span> <span class="fu">group_by</span>(Sector) <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl_xts</span>(<span class="at">cols_to_xts =</span> ALSI_ret_sector, <span class="at">spread_by =</span> Sector)</span>
-<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>SWIX_ret_sector <span class="ot">&lt;-</span> df_Port_ret_final <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Sector ,SWIX_ret_sector) <span class="sc">|&gt;</span> <span class="fu">group_by</span>(Sector) <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl_xts</span>(<span class="at">cols_to_xts =</span> SWIX_ret_sector, <span class="at">spread_by =</span> Sector)</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>()</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>ALSI_wght_sector <span class="ot">&lt;-</span>  df_Port_ret_final <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Sector ,ALSI_wght_sector) <span class="sc">|&gt;</span> <span class="fu">group_by</span>(Sector) <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl_xts</span>(<span class="at">cols_to_xts =</span> ALSI_wght_sector, <span class="at">spread_by =</span> Sector)</span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>SWIX_wght_sector <span class="ot">&lt;-</span> df_Port_ret_final <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Sector ,SWIX_wght_sector) <span class="sc">|&gt;</span> <span class="fu">group_by</span>(Sector) <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl_xts</span>(<span class="at">cols_to_xts =</span> SWIX_wght_sector, <span class="at">spread_by =</span> Sector)</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>ALSI_ret_sector <span class="ot">&lt;-</span> df_Port_ret_final <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Sector ,ALSI_ret_sector) <span class="sc">|&gt;</span> <span class="fu">group_by</span>(Sector) <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl_xts</span>(<span class="at">cols_to_xts =</span> ALSI_ret_sector, <span class="at">spread_by =</span> Sector)</span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>SWIX_ret_sector <span class="ot">&lt;-</span> df_Port_ret_final <span class="sc">|&gt;</span> <span class="fu">select</span>(date, Sector ,SWIX_ret_sector) <span class="sc">|&gt;</span> <span class="fu">group_by</span>(Sector) <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl_xts</span>(<span class="at">cols_to_xts =</span> SWIX_ret_sector, <span class="at">spread_by =</span> Sector)</span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a> ALSI_RetPort_sector <span class="ot">&lt;-</span> </span>
-<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a>      rmsfuns<span class="sc">::</span><span class="fu">Safe_Return.portfolio</span>(ALSI_ret_sector, </span>
-<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a>                                     </span>
-<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a>                       <span class="at">weights =</span> ALSI_wght_sector, <span class="at">lag_weights =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a> ALSI_RetPort_sector <span class="ot">&lt;-</span> </span>
+<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>      rmsfuns<span class="sc">::</span><span class="fu">Safe_Return.portfolio</span>(ALSI_ret_sector, </span>
+<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a>                                     </span>
+<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a>                       <span class="at">weights =</span> ALSI_wght_sector, <span class="at">lag_weights =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a>                       </span>
+<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a>                       <span class="at">verbose =</span> <span class="cn">TRUE</span>, <span class="at">contribution =</span> <span class="cn">TRUE</span>, </span>
 <span id="cb24-43"><a href="#cb24-43" aria-hidden="true" tabindex="-1"></a>                       </span>
-<span id="cb24-44"><a href="#cb24-44" aria-hidden="true" tabindex="-1"></a>                       <span class="at">verbose =</span> <span class="cn">TRUE</span>, <span class="at">contribution =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb24-45"><a href="#cb24-45" aria-hidden="true" tabindex="-1"></a>                       </span>
-<span id="cb24-46"><a href="#cb24-46" aria-hidden="true" tabindex="-1"></a>                       <span class="at">value =</span> <span class="dv">1000</span>, <span class="at">geometric =</span> <span class="cn">TRUE</span>) </span>
-<span id="cb24-47"><a href="#cb24-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-48"><a href="#cb24-48" aria-hidden="true" tabindex="-1"></a> SWIX_RetPort_sector <span class="ot">&lt;-</span> </span>
-<span id="cb24-49"><a href="#cb24-49" aria-hidden="true" tabindex="-1"></a>      rmsfuns<span class="sc">::</span><span class="fu">Safe_Return.portfolio</span>(SWIX_ret_sector, </span>
-<span id="cb24-50"><a href="#cb24-50" aria-hidden="true" tabindex="-1"></a>                                     </span>
-<span id="cb24-51"><a href="#cb24-51" aria-hidden="true" tabindex="-1"></a>                       <span class="at">weights =</span> SWIX_wght_sector, <span class="at">lag_weights =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb24-44"><a href="#cb24-44" aria-hidden="true" tabindex="-1"></a>                       <span class="at">value =</span> <span class="dv">1000</span>, <span class="at">geometric =</span> <span class="cn">TRUE</span>) </span>
+<span id="cb24-45"><a href="#cb24-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-46"><a href="#cb24-46" aria-hidden="true" tabindex="-1"></a> SWIX_RetPort_sector <span class="ot">&lt;-</span> </span>
+<span id="cb24-47"><a href="#cb24-47" aria-hidden="true" tabindex="-1"></a>      rmsfuns<span class="sc">::</span><span class="fu">Safe_Return.portfolio</span>(SWIX_ret_sector, </span>
+<span id="cb24-48"><a href="#cb24-48" aria-hidden="true" tabindex="-1"></a>                                     </span>
+<span id="cb24-49"><a href="#cb24-49" aria-hidden="true" tabindex="-1"></a>                       <span class="at">weights =</span> SWIX_wght_sector, <span class="at">lag_weights =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb24-50"><a href="#cb24-50" aria-hidden="true" tabindex="-1"></a>                       </span>
+<span id="cb24-51"><a href="#cb24-51" aria-hidden="true" tabindex="-1"></a>                       <span class="at">verbose =</span> <span class="cn">TRUE</span>, <span class="at">contribution =</span> <span class="cn">TRUE</span>, </span>
 <span id="cb24-52"><a href="#cb24-52" aria-hidden="true" tabindex="-1"></a>                       </span>
-<span id="cb24-53"><a href="#cb24-53" aria-hidden="true" tabindex="-1"></a>                       <span class="at">verbose =</span> <span class="cn">TRUE</span>, <span class="at">contribution =</span> <span class="cn">TRUE</span>, </span>
-<span id="cb24-54"><a href="#cb24-54" aria-hidden="true" tabindex="-1"></a>                       </span>
-<span id="cb24-55"><a href="#cb24-55" aria-hidden="true" tabindex="-1"></a>                       <span class="at">value =</span> <span class="dv">1000</span>, <span class="at">geometric =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb24-56"><a href="#cb24-56" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb24-57"><a href="#cb24-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-58"><a href="#cb24-58" aria-hidden="true" tabindex="-1"></a> ALSI_RetPort_sector<span class="sc">$</span>BOP.Weight  <span class="sc">%&gt;%</span> .[<span class="fu">endpoints</span>(.,<span class="st">&#39;months&#39;</span>)] <span class="sc">%&gt;%</span> <span class="fu">chart.StackedBar</span>()</span></code></pre></div>
+<span id="cb24-53"><a href="#cb24-53" aria-hidden="true" tabindex="-1"></a>                       <span class="at">value =</span> <span class="dv">1000</span>, <span class="at">geometric =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-54"><a href="#cb24-54" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-55"><a href="#cb24-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-56"><a href="#cb24-56" aria-hidden="true" tabindex="-1"></a> ALSI_RetPort_sector<span class="sc">$</span>BOP.Weight  <span class="sc">%&gt;%</span> .[<span class="fu">endpoints</span>(.,<span class="st">&#39;months&#39;</span>)] <span class="sc">%&gt;%</span> <span class="fu">chart.StackedBar</span>()</span></code></pre></div>
 <p><img
 src="README_files/figure-html/Portfolio%20Returns%20subdivided%20into%20Market%20Caps%20Contributions-1.png" /><!-- --></p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>  SWIX_RetPort_sector<span class="sc">$</span>BOP.Weight  <span class="sc">%&gt;%</span> .[<span class="fu">endpoints</span>(.,<span class="st">&#39;months&#39;</span>)] <span class="sc">%&gt;%</span> <span class="fu">chart.StackedBar</span>()</span></code></pre></div>
@@ -716,6 +800,7 @@ src="README_files/figure-html/Portfolio%20Returns%20subdivided%20into%20Market%2
 <div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>  SWIX_RetPort_sector<span class="sc">$</span>contribution <span class="sc">|&gt;</span> <span class="fu">chart.CumReturns</span>(<span class="at">legend.loc =</span> <span class="st">&quot;bottom&quot;</span>)</span></code></pre></div>
 <p><img
 src="README_files/figure-html/Portfolio%20Returns%20subdivided%20into%20Market%20Caps%20Contributions-4.png" /><!-- --></p>
+<p>Pull the rebalance days,</p>
 <div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I firt pull the effective rebalance dates</span></span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>Rebalance_Days <span class="ot">&lt;-</span>RebDays <span class="sc">|&gt;</span> <span class="fu">filter</span>(Date_Type <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Effective Date&quot;</span>)) <span class="sc">|&gt;</span> <span class="fu">pull</span>(date)</span>
@@ -841,6 +926,18 @@ src="README_files/figure-html/Portfolio%20Returns%20subdivided%20into%20Market%2
 <pre><code>## [1] 0.1</code></pre>
 <div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>Capped_SWIX_6 <span class="sc">%&gt;%</span> <span class="fu">pull</span>(weight) <span class="sc">%&gt;%</span> <span class="fu">max</span>(.) <span class="co"># Success!!</span></span></code></pre></div>
 <pre><code>## [1] 0.06</code></pre>
+<h2 id="and-10-capped-indexes-weighted-returns">6% and 10% Capped
+indexes weighted returns</h2>
+<p>I now analyse the impact different capping levels would have had on
+both the SWIX and ALSI (6% and 10%).</p>
+<p>From the ALSI capped figure, a capping of 10% has virtually the same
+cumulative returns as when uncapped, with significantly lower returns
+when capped at 6%. This is likely due to this 6% capping most of the
+relatively higher returns generated from the Resources sector.</p>
+<p>On the other hand, from the SWIX capped figure, the 10% cap would
+have improved its return since the onset of COVID, likely due to a
+reduction in weighted contribution from the weaker performing Industrial
+and Financial sectors.</p>
 <div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="do">####For ALSI capped at 10%#####</span></span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>wghts_ALSI_10 <span class="ot">&lt;-</span> </span>
@@ -1008,6 +1105,17 @@ src="README_files/figure-html/Plot%20the%20capped%20indexes-1.png" /><!-- --></p
 <p><img
 src="README_files/figure-html/Plot%20the%20capped%20indexes-2.png" /><!-- --></p>
 <h1 id="question-4">Question 4</h1>
+<p>For this question I using the Top 40 Index data from question 3 to
+calculate the concentration of returns among the ALSI constituents
+(J200) by considering it from a Principal Component Analysis (PCA)
+perspective.</p>
+<p>I plot the Scree plot (percentage of explained variances) and the
+Cos2 plot for the constituants that explain most of the volatility
+(Quality of representation).</p>
+<p>Note that; A high cos2 indicates a good representation of the
+variable on the principal component. Whereas a low cos2 indicates that
+the variable is not perfectly represented by the PCs.</p>
+<h2 id="scree-plot">Scree plot</h2>
 <div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(<span class="st">&quot;RiskPortfolios&quot;</span>, <span class="st">&quot;FactoMineR&quot;</span>, <span class="st">&quot;factoextra&quot;</span>, <span class="st">&quot;broom&quot;</span>)</span>
 <span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="co">#  Extract the weighted returns for each constituent from Q3, and change to wide format to use princomp.</span></span>
@@ -1117,20 +1225,34 @@ src="README_files/figure-html/Plot%20the%20capped%20indexes-2.png" /><!-- --></p
 <span id="cb42-107"><a href="#cb42-107" aria-hidden="true" tabindex="-1"></a><span class="co"># And now for plotting</span></span></code></pre></div>
 <div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fviz_screeplot</span>(pca, <span class="at">ncp=</span><span class="dv">10</span>)</span></code></pre></div>
 <p><img src="README_files/figure-html/scree%20plot-1.png" /><!-- --></p>
-<p>“From the plot above, we might want to stop at the fifth principal
-component. 87% of the information (variances) contained in the data are
-retained by the first five principal components.”</p>
+<p>The plot above shows: nearly 20% of variation in the ALSI index is
+explained by a single component. It does not give insight into what this
+component or factor might be, but it tells us how this component is
+calculated linearly. In addition, excluding the large portion explained
+by the first two PC’s, the remaining seven PC’s accounts for roughly the
+same amount of variation in the ALSI.</p>
+<h2 id="cos2-plot">Cos2 plot</h2>
+<p>Given the large contribution of the first two components, I generate
+the cos2 plot below for the first two PC’s. NPN, BHP, and AGL have high
+cos2 values, indicating a good representation of the variable on the
+first two PC’s.</p>
+<p>In conclusion; NPN, BHP, and AGL constituents explain a significant
+portion of the variation in the ALSI Top 40 index.</p>
 <div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fviz_cos2</span>(pca, <span class="at">choice =</span> <span class="st">&quot;var&quot;</span>, <span class="at">axes =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">top =</span> <span class="dv">10</span>)</span></code></pre></div>
 <p><img src="README_files/figure-html/cos2%20plot-1.png" /><!-- --></p>
-<p>Note that,</p>
-<p>A high cos2 indicates a good representation of the variable on the
-principal component. In this case the variable is positioned close to
-the circumference of the correlation circle.</p>
-<p>A low cos2 indicates that the variable is not perfectly represented
-by the PCs. In this case the variable is close to the center of the
-circle.</p>
 <h1 id="question-5">Question 5</h1>
-<h2 id="loading-data">Loading data</h2>
+<p>The purpose of this question is twofold; To comment on the following
+two statements:</p>
+<ul>
+<li>The South African rand (ZAR) has over the past few years been one of
+the most volatile currencies;</li>
+<li>The ZAR has generally performed well during periods where G10
+currency carry trades have been favourable and these currency valuations
+relatively cheap. Globally, it has been one of the currencies that most
+benefit during periods where the Dollar is comparatively strong,
+indicating a risk-on sentiment.</li>
+</ul>
+<h2 id="loading-data-2">Loading data</h2>
 <div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>cncy <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/currencies.rds&quot;</span>)</span>
 <span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>cncy_Carry <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/cncy_Carry.rds&quot;</span>)</span>
 <span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>cncy_value <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">&quot;data/cncy_value.rds&quot;</span>)</span>
@@ -1178,15 +1300,7 @@ and compare their respective dollar exchange rates.</p>
 <span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a><span class="co"># filter countries to consider</span></span>
 <span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>Curr_df <span class="ot">&lt;-</span> Curr_df <span class="sc">|&gt;</span> <span class="fu">filter</span>(Name <span class="sc">%in%</span> Countries_to_consider) </span>
-<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Now I take their dlog in order to plot their cummulative growth w.r.t the USD</span></span>
-<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a>Curr_df <span class="sc">|&gt;</span>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="fu">aes</span>(date, Price, <span class="at">color =</span> Name))</span></code></pre></div>
-<p><img
-src="README_files/figure-html/unnamed-chunk-3-1.png" /><!-- --></p>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>Curr_df <span class="ot">&lt;-</span> Curr_df <span class="sc">|&gt;</span> <span class="fu">filter</span>(Name <span class="sc">%in%</span> Countries_to_consider) </span></code></pre></div>
 <p>To get an initial comparison of volatility of our selected
 currencies, I plot the sample standard deviation in log growth against
 the dollar. I also filter the dates to consider the period from 2006
@@ -1368,9 +1482,6 @@ CCC model), to allow for estimates of time-varying correlation.</p>
 ## Estimates:  0 0.040636 0.955979 
 ## se.coef  :  0 0.00391 0.003948 
 ## t-value  :  3.222423 10.39394 242.1655</code></pre>
-<p>I now have the estimates of volatility for each series (currency),
-and below I change the output to a usable Xts series for each column in
-gwt_xts. And I plot the Sigma (volatility) of each series.</p>
 <div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>Vol <span class="ot">&lt;-</span> DCCPre<span class="sc">$</span>marVol</span>
 <span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(Vol) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(gwt_xts)</span>
@@ -1424,74 +1535,69 @@ Model</p>
 <span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:rmsfuns&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
 <span id="cb57-12"><a href="#cb57-12" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:tbl2xts&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
 <span id="cb57-13"><a href="#cb57-13" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:ggpubr&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
-<span id="cb57-14"><a href="#cb57-14" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:broom&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span></code></pre></div>
-<pre><code>## Warning: &#39;broom&#39; namespace cannot be unloaded:
-##   namespace &#39;broom&#39; is imported by &#39;modelr&#39;, &#39;rstatix&#39; so cannot be unloaded</code></pre>
-<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:rstatix&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:modelr&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:tidyr&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span></code></pre></div>
-<pre><code>## Warning: &#39;tidyr&#39; namespace cannot be unloaded:
-##   namespace &#39;tidyr&#39; is imported by &#39;broom&#39; so cannot be unloaded</code></pre>
-<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:dplyr&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span></code></pre></div>
+<span id="cb57-14"><a href="#cb57-14" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:rstatix&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
+<span id="cb57-15"><a href="#cb57-15" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:modelr&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
+<span id="cb57-16"><a href="#cb57-16" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:broom&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
+<span id="cb57-17"><a href="#cb57-17" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:tidyr&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span>
+<span id="cb57-18"><a href="#cb57-18" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(<span class="st">&quot;package:dplyr&quot;</span>, <span class="at">unload=</span><span class="cn">TRUE</span>)</span></code></pre></div>
 <pre><code>## Warning: &#39;dplyr&#39; namespace cannot be unloaded:
-##   namespace &#39;dplyr&#39; is imported by &#39;dbplyr&#39;, &#39;tidyr&#39;, &#39;broom&#39; so cannot be unloaded</code></pre>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>DCC <span class="ot">&lt;-</span> <span class="fu">dccFit</span>(StdRes,<span class="at">type =</span> <span class="st">&quot;Engle&quot;</span>) </span></code></pre></div>
+##   namespace &#39;dplyr&#39; is imported by &#39;dbplyr&#39; so cannot be unloaded</code></pre>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>DCC <span class="ot">&lt;-</span> <span class="fu">dccFit</span>(StdRes,<span class="at">type =</span> <span class="st">&quot;Engle&quot;</span>) </span></code></pre></div>
 <pre><code>## Warning in sqrt(diag(Hi)): NaNs produced</code></pre>
 <pre><code>## Estimates:  0.95 0.02370479 8.561218 
 ## st.errors:  NaN NaN 0.3259811 
 ## t-values:   NaN NaN 26.26292</code></pre>
-<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(tidyverse,fmxdat, rmsfuns, tbl2xts, tidyr, ggpubr, broom,rstatix, modelr )</span>
-<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>Rhot <span class="ot">&lt;-</span> DCC<span class="sc">$</span>rho.t</span>
-<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Right, so it gives us all the columns together in the form:</span></span>
-<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a><span class="co"># X1,X1 ; X1,X2 ; X1,X3 ; ....</span></span>
-<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a><span class="co"># So, let&#39;s be clever about defining more informative col names. </span></span>
-<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a><span class="co"># I will create a renaming function below:</span></span>
-<span id="cb66-9"><a href="#cb66-9" aria-hidden="true" tabindex="-1"></a>ReturnSeries <span class="ot">=</span> gwt_xts</span>
-<span id="cb66-10"><a href="#cb66-10" aria-hidden="true" tabindex="-1"></a>DCC.TV.Cor <span class="ot">=</span> Rhot</span>
-<span id="cb66-11"><a href="#cb66-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-12"><a href="#cb66-12" aria-hidden="true" tabindex="-1"></a>renamingdcc <span class="ot">&lt;-</span> <span class="cf">function</span>(ReturnSeries, DCC.TV.Cor) {</span>
-<span id="cb66-13"><a href="#cb66-13" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb66-14"><a href="#cb66-14" aria-hidden="true" tabindex="-1"></a>ncolrtn <span class="ot">&lt;-</span> <span class="fu">ncol</span>(ReturnSeries)</span>
-<span id="cb66-15"><a href="#cb66-15" aria-hidden="true" tabindex="-1"></a>namesrtn <span class="ot">&lt;-</span> <span class="fu">colnames</span>(ReturnSeries)</span>
-<span id="cb66-16"><a href="#cb66-16" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(namesrtn, <span class="at">collapse =</span> <span class="st">&quot;_&quot;</span>)</span>
-<span id="cb66-17"><a href="#cb66-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-18"><a href="#cb66-18" aria-hidden="true" tabindex="-1"></a>nam <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb66-19"><a href="#cb66-19" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> <span class="fu">mapply</span>(rep, <span class="at">times =</span> ncolrtn<span class="sc">:</span><span class="dv">1</span>, <span class="at">x =</span> namesrtn)</span>
-<span id="cb66-20"><a href="#cb66-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Now let&#39;s be creative in designing a nested for loop to save the names corresponding to the columns of interest.. </span></span>
-<span id="cb66-21"><a href="#cb66-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-22"><a href="#cb66-22" aria-hidden="true" tabindex="-1"></a><span class="co"># TIP: draw what you want to achieve on a paper first. Then apply code.</span></span>
-<span id="cb66-23"><a href="#cb66-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-24"><a href="#cb66-24" aria-hidden="true" tabindex="-1"></a><span class="co"># See if you can do this on your own first.. Then check vs my solution:</span></span>
-<span id="cb66-25"><a href="#cb66-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-26"><a href="#cb66-26" aria-hidden="true" tabindex="-1"></a>nam <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb66-27"><a href="#cb66-27" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(ncolrtn)) {</span>
-<span id="cb66-28"><a href="#cb66-28" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(ncolrtn)) {</span>
-<span id="cb66-29"><a href="#cb66-29" aria-hidden="true" tabindex="-1"></a>  nam[(i <span class="sc">+</span> (j<span class="dv">-1</span>)<span class="sc">*</span>(ncolrtn))] <span class="ot">&lt;-</span> <span class="fu">paste</span>(xx[[j]][<span class="dv">1</span>], xx[[i]][<span class="dv">1</span>], <span class="at">sep=</span><span class="st">&quot;_&quot;</span>)</span>
-<span id="cb66-30"><a href="#cb66-30" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb66-31"><a href="#cb66-31" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb66-32"><a href="#cb66-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-33"><a href="#cb66-33" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(DCC.TV.Cor) <span class="ot">&lt;-</span> nam</span>
-<span id="cb66-34"><a href="#cb66-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-35"><a href="#cb66-35" aria-hidden="true" tabindex="-1"></a><span class="co"># So to plot all the time-varying correlations wrt SBK:</span></span>
-<span id="cb66-36"><a href="#cb66-36" aria-hidden="true" tabindex="-1"></a> <span class="co"># First append the date column that has (again) been removed...</span></span>
-<span id="cb66-37"><a href="#cb66-37" aria-hidden="true" tabindex="-1"></a>DCC.TV.Cor <span class="ot">&lt;-</span> </span>
-<span id="cb66-38"><a href="#cb66-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">data.frame</span>( <span class="fu">cbind</span>( <span class="at">date =</span> <span class="fu">index</span>(ReturnSeries), DCC.TV.Cor)) <span class="sc">%&gt;%</span> <span class="co"># Add date column which dropped away...</span></span>
-<span id="cb66-39"><a href="#cb66-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">as.Date</span>(date)) <span class="sc">%&gt;%</span>  <span class="fu">tbl_df</span>() </span>
-<span id="cb66-40"><a href="#cb66-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-41"><a href="#cb66-41" aria-hidden="true" tabindex="-1"></a>DCC.TV.Cor <span class="ot">&lt;-</span> DCC.TV.Cor <span class="sc">%&gt;%</span> <span class="fu">gather</span>(Pairs, Rho, <span class="sc">-</span>date)</span>
-<span id="cb66-42"><a href="#cb66-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-43"><a href="#cb66-43" aria-hidden="true" tabindex="-1"></a>DCC.TV.Cor</span>
-<span id="cb66-44"><a href="#cb66-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-45"><a href="#cb66-45" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb66-46"><a href="#cb66-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-47"><a href="#cb66-47" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s see if our function works! Excitement!</span></span>
-<span id="cb66-48"><a href="#cb66-48" aria-hidden="true" tabindex="-1"></a>Rhot <span class="ot">&lt;-</span> </span>
-<span id="cb66-49"><a href="#cb66-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">renamingdcc</span>(<span class="at">ReturnSeries =</span> gwt_xts, <span class="at">DCC.TV.Cor =</span> Rhot)</span></code></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(tidyverse,fmxdat, rmsfuns, tbl2xts, tidyr, ggpubr, broom,rstatix, modelr )</span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>Rhot <span class="ot">&lt;-</span> DCC<span class="sc">$</span>rho.t</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Right, so it gives us all the columns together in the form:</span></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a><span class="co"># X1,X1 ; X1,X2 ; X1,X3 ; ....</span></span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a><span class="co"># So, let&#39;s be clever about defining more informative col names. </span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a><span class="co"># I will create a renaming function below:</span></span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>ReturnSeries <span class="ot">=</span> gwt_xts</span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>DCC.TV.Cor <span class="ot">=</span> Rhot</span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>renamingdcc <span class="ot">&lt;-</span> <span class="cf">function</span>(ReturnSeries, DCC.TV.Cor) {</span>
+<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb63-12"><a href="#cb63-12" aria-hidden="true" tabindex="-1"></a>ncolrtn <span class="ot">&lt;-</span> <span class="fu">ncol</span>(ReturnSeries)</span>
+<span id="cb63-13"><a href="#cb63-13" aria-hidden="true" tabindex="-1"></a>namesrtn <span class="ot">&lt;-</span> <span class="fu">colnames</span>(ReturnSeries)</span>
+<span id="cb63-14"><a href="#cb63-14" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(namesrtn, <span class="at">collapse =</span> <span class="st">&quot;_&quot;</span>)</span>
+<span id="cb63-15"><a href="#cb63-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-16"><a href="#cb63-16" aria-hidden="true" tabindex="-1"></a>nam <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb63-17"><a href="#cb63-17" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> <span class="fu">mapply</span>(rep, <span class="at">times =</span> ncolrtn<span class="sc">:</span><span class="dv">1</span>, <span class="at">x =</span> namesrtn)</span>
+<span id="cb63-18"><a href="#cb63-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Now let&#39;s be creative in designing a nested for loop to save the names corresponding to the columns of interest.. </span></span>
+<span id="cb63-19"><a href="#cb63-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-20"><a href="#cb63-20" aria-hidden="true" tabindex="-1"></a><span class="co"># TIP: draw what you want to achieve on a paper first. Then apply code.</span></span>
+<span id="cb63-21"><a href="#cb63-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-22"><a href="#cb63-22" aria-hidden="true" tabindex="-1"></a><span class="co"># See if you can do this on your own first.. Then check vs my solution:</span></span>
+<span id="cb63-23"><a href="#cb63-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-24"><a href="#cb63-24" aria-hidden="true" tabindex="-1"></a>nam <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb63-25"><a href="#cb63-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(ncolrtn)) {</span>
+<span id="cb63-26"><a href="#cb63-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(ncolrtn)) {</span>
+<span id="cb63-27"><a href="#cb63-27" aria-hidden="true" tabindex="-1"></a>  nam[(i <span class="sc">+</span> (j<span class="dv">-1</span>)<span class="sc">*</span>(ncolrtn))] <span class="ot">&lt;-</span> <span class="fu">paste</span>(xx[[j]][<span class="dv">1</span>], xx[[i]][<span class="dv">1</span>], <span class="at">sep=</span><span class="st">&quot;_&quot;</span>)</span>
+<span id="cb63-28"><a href="#cb63-28" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb63-29"><a href="#cb63-29" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb63-30"><a href="#cb63-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-31"><a href="#cb63-31" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(DCC.TV.Cor) <span class="ot">&lt;-</span> nam</span>
+<span id="cb63-32"><a href="#cb63-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-33"><a href="#cb63-33" aria-hidden="true" tabindex="-1"></a><span class="co"># So to plot all the time-varying correlations wrt SBK:</span></span>
+<span id="cb63-34"><a href="#cb63-34" aria-hidden="true" tabindex="-1"></a> <span class="co"># First append the date column that has (again) been removed...</span></span>
+<span id="cb63-35"><a href="#cb63-35" aria-hidden="true" tabindex="-1"></a>DCC.TV.Cor <span class="ot">&lt;-</span> </span>
+<span id="cb63-36"><a href="#cb63-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">data.frame</span>( <span class="fu">cbind</span>( <span class="at">date =</span> <span class="fu">index</span>(ReturnSeries), DCC.TV.Cor)) <span class="sc">%&gt;%</span> <span class="co"># Add date column which dropped away...</span></span>
+<span id="cb63-37"><a href="#cb63-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">as.Date</span>(date)) <span class="sc">%&gt;%</span>  <span class="fu">tbl_df</span>() </span>
+<span id="cb63-38"><a href="#cb63-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-39"><a href="#cb63-39" aria-hidden="true" tabindex="-1"></a>DCC.TV.Cor <span class="ot">&lt;-</span> DCC.TV.Cor <span class="sc">%&gt;%</span> <span class="fu">gather</span>(Pairs, Rho, <span class="sc">-</span>date)</span>
+<span id="cb63-40"><a href="#cb63-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-41"><a href="#cb63-41" aria-hidden="true" tabindex="-1"></a>DCC.TV.Cor</span>
+<span id="cb63-42"><a href="#cb63-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-43"><a href="#cb63-43" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb63-44"><a href="#cb63-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-45"><a href="#cb63-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s see if our function works! Excitement!</span></span>
+<span id="cb63-46"><a href="#cb63-46" aria-hidden="true" tabindex="-1"></a>Rhot <span class="ot">&lt;-</span> </span>
+<span id="cb63-47"><a href="#cb63-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">renamingdcc</span>(<span class="at">ReturnSeries =</span> gwt_xts, <span class="at">DCC.TV.Cor =</span> Rhot)</span></code></pre></div>
 <pre><code>## Warning: `tbl_df()` was deprecated in dplyr 1.0.0.
 ## ℹ Please use `tibble::as_tibble()` instead.</code></pre>
-<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Rhot <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(date))</span></code></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Rhot <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(date))</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 3
 ##   date       Pairs                Rho
 ##   &lt;date&gt;     &lt;chr&gt;              &lt;dbl&gt;
@@ -1502,24 +1608,23 @@ Model</p>
 ## 5 2005-01-03 Brazil_Turkey      0.411
 ## 6 2005-01-03 Brazil_BBDXY       0.380</code></pre>
 <p>And now I create a plot the ZAR relative to the other currencies</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s now create a plot for all the stocks relative to the other stocks...</span></span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>g1 <span class="ot">&lt;-</span> </span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(Rhot <span class="sc">|&gt;</span>  <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">&quot;SouthAfrica_&quot;</span>, Pairs ), <span class="sc">!</span><span class="fu">grepl</span>(<span class="st">&quot;_SouthAfrica&quot;</span>, Pairs)) ) <span class="sc">+</span> </span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> Rho, <span class="at">colour =</span> Pairs)) <span class="sc">+</span> </span>
-<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_hc</span>() <span class="sc">+</span></span>
-<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;Dynamic Conditional Correlations: South Africa (ZAR)&quot;</span>)</span>
-<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb70-8"><a href="#cb70-8" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(g1)</span></code></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s now create a plot for all the stocks relative to the other stocks...</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>g1 <span class="ot">&lt;-</span> </span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(Rhot <span class="sc">|&gt;</span>  <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">&quot;SouthAfrica_&quot;</span>, Pairs ), <span class="sc">!</span><span class="fu">grepl</span>(<span class="st">&quot;_SouthAfrica&quot;</span>, Pairs)) ) <span class="sc">+</span> </span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> Rho, <span class="at">colour =</span> Pairs)) <span class="sc">+</span> </span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_hc</span>() <span class="sc">+</span></span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;Dynamic Conditional Correlations: South Africa (ZAR)&quot;</span>)</span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(g1)</span></code></pre></div>
 <p><img
 src="README_files/figure-html/unnamed-chunk-9-1.png" /><!-- --></p>
 <p>For a clearer picture, lets only plot the SouthAfrica_BBDXY plot</p>
-<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>g2 <span class="ot">&lt;-</span> </span>
-<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(Rhot <span class="sc">|&gt;</span>  <span class="fu">filter</span>(Pairs <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;SouthAfrica_BBDXY&quot;</span>))) <span class="sc">+</span> </span>
-<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> Rho, <span class="at">colour =</span> Pairs)) <span class="sc">+</span> </span>
-<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_hc</span>() <span class="sc">+</span></span>
-<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;Dynamic Conditional Correlation: South Africa (ZAR) and BBDXY&quot;</span>)</span>
-<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(g2)</span></code></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>g2 <span class="ot">&lt;-</span> </span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(Rhot <span class="sc">|&gt;</span>  <span class="fu">filter</span>(Pairs <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;SouthAfrica_BBDXY&quot;</span>))) <span class="sc">+</span> </span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> Rho, <span class="at">colour =</span> Pairs)) <span class="sc">+</span> </span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_hc</span>() <span class="sc">+</span></span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;Dynamic Conditional Correlation: South Africa (ZAR) and BBDXY&quot;</span>)</span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(g2)</span></code></pre></div>
 <p><img
 src="README_files/figure-html/unnamed-chunk-10-1.png" /><!-- --></p>
-<h1 id="question-6">Question 6</h1>

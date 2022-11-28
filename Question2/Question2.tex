@@ -1,0 +1,366 @@
+\documentclass[11pt,preprint, authoryear]{elsarticle}
+
+\usepackage{lmodern}
+%%%% My spacing
+\usepackage{setspace}
+\setstretch{1.2}
+\DeclareMathSizes{12}{14}{10}{10}
+
+% Wrap around which gives all figures included the [H] command, or places it "here". This can be tedious to code in Rmarkdown.
+\usepackage{float}
+\let\origfigure\figure
+\let\endorigfigure\endfigure
+\renewenvironment{figure}[1][2] {
+    \expandafter\origfigure\expandafter[H]
+} {
+    \endorigfigure
+}
+
+\let\origtable\table
+\let\endorigtable\endtable
+\renewenvironment{table}[1][2] {
+    \expandafter\origtable\expandafter[H]
+} {
+    \endorigtable
+}
+
+
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+
+\usepackage{amssymb, amsmath, amsthm, amsfonts}
+
+\def\bibsection{\section*{References}} %%% Make "References" appear before bibliography
+
+
+\usepackage[round]{natbib}
+
+\usepackage{longtable}
+\usepackage[margin=2.3cm,bottom=2cm,top=2.5cm, includefoot]{geometry}
+\usepackage{fancyhdr}
+\usepackage[bottom, hang, flushmargin]{footmisc}
+\usepackage{graphicx}
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+\numberwithin{table}{section}
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{1.3ex plus 0.5ex minus 0.3ex}
+\usepackage{textcomp}
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+\usepackage{array}
+\newcolumntype{x}[1]{>{\centering\arraybackslash\hspace{0pt}}p{#1}}
+
+%%%%  Remove the "preprint submitted to" part. Don't worry about this either, it just looks better without it:
+\makeatletter
+\def\ps@pprintTitle{%
+  \let\@oddhead\@empty
+  \let\@evenhead\@empty
+  \let\@oddfoot\@empty
+  \let\@evenfoot\@oddfoot
+}
+\makeatother
+
+ \def\tightlist{} % This allows for subbullets!
+
+\usepackage{hyperref}
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=blue,
+            pdfborder={0 0 0}}
+
+
+% The following packages allow huxtable to work:
+\usepackage{siunitx}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{calc}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{caption}
+
+
+\newenvironment{columns}[1][]{}{}
+
+\newenvironment{column}[1]{\begin{minipage}{#1}\ignorespaces}{%
+\end{minipage}
+\ifhmode\unskip\fi
+\aftergroup\useignorespacesandallpars}
+
+\def\useignorespacesandallpars#1\ignorespaces\fi{%
+#1\fi\ignorespacesandallpars}
+
+\makeatletter
+\def\ignorespacesandallpars{%
+  \@ifnextchar\par
+    {\expandafter\ignorespacesandallpars\@gobble}%
+    {}%
+}
+\makeatother
+
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newenvironment{CSLReferences}%
+  {\setlength{\parindent}{0pt}%
+  \everypar{\setlength{\hangindent}{\cslhangindent}}\ignorespaces}%
+  {\par}
+
+
+\urlstyle{same}  % don't use monospace font for urls
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{5}
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+
+%%% Include extra packages specified by user
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+%%% Hard setting column skips for reports - this ensures greater consistency and control over the length settings in the document.
+%% page layout
+%% paragraphs
+\setlength{\baselineskip}{12pt plus 0pt minus 0pt}
+\setlength{\parskip}{12pt plus 0pt minus 0pt}
+\setlength{\parindent}{0pt plus 0pt minus 0pt}
+%% floats
+\setlength{\floatsep}{12pt plus 0 pt minus 0pt}
+\setlength{\textfloatsep}{20pt plus 0pt minus 0pt}
+\setlength{\intextsep}{14pt plus 0pt minus 0pt}
+\setlength{\dbltextfloatsep}{20pt plus 0pt minus 0pt}
+\setlength{\dblfloatsep}{14pt plus 0pt minus 0pt}
+%% maths
+\setlength{\abovedisplayskip}{12pt plus 0pt minus 0pt}
+\setlength{\belowdisplayskip}{12pt plus 0pt minus 0pt}
+%% lists
+\setlength{\topsep}{10pt plus 0pt minus 0pt}
+\setlength{\partopsep}{3pt plus 0pt minus 0pt}
+\setlength{\itemsep}{5pt plus 0pt minus 0pt}
+\setlength{\labelsep}{8mm plus 0mm minus 0mm}
+\setlength{\parsep}{\the\parskip}
+\setlength{\listparindent}{\the\parindent}
+%% verbatim
+\setlength{\fboxsep}{5pt plus 0pt minus 0pt}
+
+
+
+\begin{document}
+
+
+
+\begin{frontmatter}  %
+
+\title{Financial Econometrics 871 Practical Exam 2022: Question 2}
+
+% Set to FALSE if wanting to remove title (for submission)
+
+
+
+
+\author[Add1]{Tian Cater}
+\ead{19025831@sun.ac.za}
+
+
+
+
+
+\address[Add1]{University of Stellenbosch, Western Cape, South
+Africa\footnote{2022-11-27}}
+
+
+\begin{abstract}
+\small{
+Economists recently pointed out that the current yield spreads in SA mid
+to longer-dated bond yields have since 2020 been the highest in decades.
+I analyse the current yield spreads in the local bond market for this
+question. In addition, I compare the local spread to comparable
+international spreads, observe the correlation between the local bond
+spreads and the USD-ZAR level, and consider the SA 10 Year Break-Even
+inflation estimate. The findings suggest that the current yield spreads
+in SA mid to longer-dated bond yields have been the highest in decades
+since 2020 and even 2018. Additionally, the strong co-movement between
+the SA bond yield spread and the ZAR/USD exchange rate has remained
+strong; however, it marginally diminished between 2010 and 2016. Lastly,
+the SA average inflation rate has not surpassed the BE inflation yield
+estimate since 2014, indicating that fixed investment has been firmly
+preferred over index-linked bond investment.
+}
+\end{abstract}
+
+\vspace{1cm}
+
+
+
+
+
+\vspace{0.5cm}
+
+\end{frontmatter}
+
+
+
+%________________________
+% Header and Footers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagestyle{fancy}
+\chead{}
+\rhead{Question 2}
+\lfoot{}
+\rfoot{\footnotesize Page \thepage}
+\lhead{}
+%\rfoot{\footnotesize Page \thepage } % "e.g. Page 2"
+\cfoot{}
+
+%\setlength\headheight{30pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%________________________
+
+\headsep 35pt % So that header does not go over title
+
+
+
+
+\hypertarget{comparing-global-bond-market-yield-spreads}{%
+\section{Comparing Global Bond Market Yield
+Spreads}\label{comparing-global-bond-market-yield-spreads}}
+
+Figure \ref{Figure1} shows the bond market yield spreads for SA, the US,
+Brazil, Germany, China, and Japan, respectively. Visually, \ref{Figure1}
+confirms the notion that the current yield spreads in local mid to
+longer-dated bond yields have since 2020 been the highest in decades.
+The SA Bond yield spread has been significantly more volatile than those
+of Germany, China, the US, and Japan while having less volatility in the
+last few years than Brazil.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question2_files/figure-latex/Global_bonds_plot-1} 
+
+}
+
+\caption{Global Bond Market Yield Spreads \label{Figure1}}\label{fig:Global_bonds_plot}
+\end{figure}
+
+In considering the SA and US bond yield spreads against the ZAR/USD
+exchange rate, graphed in \ref{Figure2} below, it is evident that the
+co-movements between the ZAR/USD and the SA bonds yield spread have over
+time been relatively strong, however, between the periods of 2010 and
+2016 this positive correlation has diminished, likely due to the large
+open market asset purchases by the FED that distorts the international
+spillovers.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question2_files/figure-latex/SA_Bonds_Plot-1} 
+
+}
+
+\caption{SA Bond Yields, Spread, and ZAR/USD Exchange Rate \label{Figure2}}\label{fig:SA_Bonds_Plot}
+\end{figure}
+
+To provide an additional perspective, the statistics in Table
+\ref{Table1} compared the SA and US bond yield spread before and after
+the Global Financial Crises (GFC). Overall, considering the SA and US
+separately and somewhat loosely, as done here, the volatility in the SA
+bond yield has remained relatively similar compared to its pre- and
+post-GFC.
+
+\begin{table}
+
+\caption{\label{tab:stats table}SA vs US Bond Yield Spread Statistics: Pre GFC vs Post GFC. \label{Table1}}
+\centering
+\begin{tabular}[t]{lrrrr}
+\toprule
+\multicolumn{1}{c}{ } & \multicolumn{2}{c}{Pre GFC} & \multicolumn{2}{c}{Post GFC} \\
+\cmidrule(l{3pt}r{3pt}){2-3} \cmidrule(l{3pt}r{3pt}){4-5}
+Description & SA & US & SA & US\\
+\midrule
+Minimum & -0.51 & -1.80 & -0.05 & -0.58\\
+Arithmetic Mean & 1.04 & 0.50 & 1.43 & 1.97\\
+Maximum & 2.74 & 2.85 & 2.91 & 6.30\\
+SE Mean & 0.02 & 0.02 & 0.01 & 0.02\\
+LCL Mean (0.95) & 1.00 & 0.46 & 1.40 & 1.93\\
+\addlinespace
+UCL Mean (0.95) & 1.08 & 0.55 & 1.45 & 2.00\\
+Stdev & 0.96 & 1.10 & 0.80 & 0.99\\
+Skewness & 0.04 & -0.14 & 0.03 & 1.15\\
+Kurtosis & -1.52 & -0.92 & -1.10 & 1.39\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\hypertarget{sa-break-even-inflation}{%
+\section{SA Break-Even Inflation}\label{sa-break-even-inflation}}
+
+Lastly, I analyse the SA Break-Even inflation yield estimate and compare
+it to the SA inflation rate (Figure \ref{Figure4}). Break-even inflation
+is the difference between the nominal yield on a fixed-rate investment
+and the real yield (fixed spread) on an inflation-linked investment of
+similar maturity and credit quality. If inflation averages more than the
+break-even, the inflation-linked investment will outperform the fixed
+rate.
+
+From Figure \ref{Figure4}, the SA average inflation rate has not
+surpassed the BE inflation yield estimate since 2014, indicating that
+fixed investment has been firmly preferred over index-linked bond
+investment.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question2_files/figure-latex/BEI_infl_plot-1} 
+
+}
+
+\caption{SA Break-Even Inflation Yield Versus Average Inflation Rate \label{Figure4}}\label{fig:BEI_infl_plot}
+\end{figure}
+
+\newpage
+
+\hypertarget{references}{%
+\section*{References}\label{references}}
+\addcontentsline{toc}{section}{References}
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{0}{0}
+\end{CSLReferences}
+
+\bibliography{Tex/ref}
+
+
+
+
+
+\end{document}

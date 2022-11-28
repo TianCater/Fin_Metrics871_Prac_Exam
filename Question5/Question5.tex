@@ -1,0 +1,394 @@
+\documentclass[11pt,preprint, authoryear]{elsarticle}
+
+\usepackage{lmodern}
+%%%% My spacing
+\usepackage{setspace}
+\setstretch{1.2}
+\DeclareMathSizes{12}{14}{10}{10}
+
+% Wrap around which gives all figures included the [H] command, or places it "here". This can be tedious to code in Rmarkdown.
+\usepackage{float}
+\let\origfigure\figure
+\let\endorigfigure\endfigure
+\renewenvironment{figure}[1][2] {
+    \expandafter\origfigure\expandafter[H]
+} {
+    \endorigfigure
+}
+
+\let\origtable\table
+\let\endorigtable\endtable
+\renewenvironment{table}[1][2] {
+    \expandafter\origtable\expandafter[H]
+} {
+    \endorigtable
+}
+
+
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+
+\usepackage{amssymb, amsmath, amsthm, amsfonts}
+
+\def\bibsection{\section*{References}} %%% Make "References" appear before bibliography
+
+
+\usepackage[round]{natbib}
+
+\usepackage{longtable}
+\usepackage[margin=2.3cm,bottom=2cm,top=2.5cm, includefoot]{geometry}
+\usepackage{fancyhdr}
+\usepackage[bottom, hang, flushmargin]{footmisc}
+\usepackage{graphicx}
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+\numberwithin{table}{section}
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{1.3ex plus 0.5ex minus 0.3ex}
+\usepackage{textcomp}
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+\usepackage{array}
+\newcolumntype{x}[1]{>{\centering\arraybackslash\hspace{0pt}}p{#1}}
+
+%%%%  Remove the "preprint submitted to" part. Don't worry about this either, it just looks better without it:
+\makeatletter
+\def\ps@pprintTitle{%
+  \let\@oddhead\@empty
+  \let\@evenhead\@empty
+  \let\@oddfoot\@empty
+  \let\@evenfoot\@oddfoot
+}
+\makeatother
+
+ \def\tightlist{} % This allows for subbullets!
+
+\usepackage{hyperref}
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=blue,
+            pdfborder={0 0 0}}
+
+
+% The following packages allow huxtable to work:
+\usepackage{siunitx}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{calc}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{caption}
+
+
+\newenvironment{columns}[1][]{}{}
+
+\newenvironment{column}[1]{\begin{minipage}{#1}\ignorespaces}{%
+\end{minipage}
+\ifhmode\unskip\fi
+\aftergroup\useignorespacesandallpars}
+
+\def\useignorespacesandallpars#1\ignorespaces\fi{%
+#1\fi\ignorespacesandallpars}
+
+\makeatletter
+\def\ignorespacesandallpars{%
+  \@ifnextchar\par
+    {\expandafter\ignorespacesandallpars\@gobble}%
+    {}%
+}
+\makeatother
+
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newenvironment{CSLReferences}%
+  {\setlength{\parindent}{0pt}%
+  \everypar{\setlength{\hangindent}{\cslhangindent}}\ignorespaces}%
+  {\par}
+
+
+\urlstyle{same}  % don't use monospace font for urls
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{5}
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+
+%%% Include extra packages specified by user
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+%%% Hard setting column skips for reports - this ensures greater consistency and control over the length settings in the document.
+%% page layout
+%% paragraphs
+\setlength{\baselineskip}{12pt plus 0pt minus 0pt}
+\setlength{\parskip}{12pt plus 0pt minus 0pt}
+\setlength{\parindent}{0pt plus 0pt minus 0pt}
+%% floats
+\setlength{\floatsep}{12pt plus 0 pt minus 0pt}
+\setlength{\textfloatsep}{20pt plus 0pt minus 0pt}
+\setlength{\intextsep}{14pt plus 0pt minus 0pt}
+\setlength{\dbltextfloatsep}{20pt plus 0pt minus 0pt}
+\setlength{\dblfloatsep}{14pt plus 0pt minus 0pt}
+%% maths
+\setlength{\abovedisplayskip}{12pt plus 0pt minus 0pt}
+\setlength{\belowdisplayskip}{12pt plus 0pt minus 0pt}
+%% lists
+\setlength{\topsep}{10pt plus 0pt minus 0pt}
+\setlength{\partopsep}{3pt plus 0pt minus 0pt}
+\setlength{\itemsep}{5pt plus 0pt minus 0pt}
+\setlength{\labelsep}{8mm plus 0mm minus 0mm}
+\setlength{\parsep}{\the\parskip}
+\setlength{\listparindent}{\the\parindent}
+%% verbatim
+\setlength{\fboxsep}{5pt plus 0pt minus 0pt}
+
+
+
+\begin{document}
+
+
+
+\begin{frontmatter}  %
+
+\title{Financial Econometrics 871 Practical Exam 2022: Question 5}
+
+% Set to FALSE if wanting to remove title (for submission)
+
+
+
+
+\author[Add1]{Tian Cater}
+\ead{19025831@sun.ac.za}
+
+
+
+
+
+\address[Add1]{University of Stellenbosch, Western Cape, South
+Africa\footnote{2022-11-27}}
+
+
+
+\vspace{1cm}
+
+
+
+
+
+\vspace{0.5cm}
+
+\end{frontmatter}
+
+
+
+%________________________
+% Header and Footers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagestyle{fancy}
+\chead{}
+\rhead{Question 5}
+\lfoot{}
+\rfoot{\footnotesize Page \thepage}
+\lhead{}
+%\rfoot{\footnotesize Page \thepage } % "e.g. Page 2"
+\cfoot{}
+
+%\setlength\headheight{30pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%________________________
+
+\headsep 35pt % So that header does not go over title
+
+
+
+
+\hypertarget{introduction}{%
+\section{\texorpdfstring{Introduction
+\label{Introduction}}{Introduction }}\label{introduction}}
+
+The purpose of this question is to comment on the following two
+statements:
+
+\begin{enumerate}
+  \item The South African rand (ZAR) has, over the past few years, been one of the most volatile currencies
+  \item The ZAR has generally performed well during periods where G10 currency carry trades have been favourable, and these currency valuations are relatively cheap. Globally, it has been one of the currencies that most benefit during periods when the Dollar is comparatively strong, indicating a risk-on sentiment.
+\end{enumerate}
+
+In summary, the findings here are in contrast to the first statement.
+That is, even though the ZAR has been highly volatile in the past few
+years, it is not one of the most volatile, having similar variance in
+the recent years as in the more distant past. With respect to the second
+statement, the evidence here strongly agrees. That is, that the ZAR is
+partially insulated from periods of weak performance in the G10
+countries. Specifically, during periods where the USD has been weak, the
+ZARs positive dynamic conditional correlation with the USD has dropped
+significantly.
+
+\hypertarget{comparing-global-currency-volatiliy-to-the-zar}{%
+\section{Comparing Global Currency Volatiliy to the
+ZAR}\label{comparing-global-currency-volatiliy-to-the-zar}}
+
+To investigate the first statement, I select 8 countries' currencies:
+Brazil, EU, India, SA, Turkey, Poland, Zambia, and the UK and compare
+their respective dollar exchange rates. The reasoning behind the
+selection is diversity in comparison; by including developing nations
+with historically low levels of spillovers from the US (Brazil and
+India), one of the largest economies in Africa (Zambia), two developing
+nations from Asia (Poland and Turkey), and two of the strongest
+currencies in the world (UK and EU), a clear picture can be painted on
+how volatile the ZAR is in comparison. Figure \ref{Figure1} graphs the
+scaled logarithmic growth of the respective currencies to the USD since
+2005, giving weak hints that the ZAR may not have been more volatile in
+the last couple of years than the first comment suggests.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question5_files/figure-latex/Scaled Growth Plot-1} 
+
+}
+
+\caption{Scaled (demeaned) Log Growth of Respective Currencies to USD since 2005. \label{Figure1}}\label{fig:Scaled Growth Plot}
+\end{figure}
+
+To get an initial comparison of the volatility of the selected
+currencies, Figure \ref{Figure2} plots the respective sample standard
+deviation in scaled log growth against the dollar.\footnote{The dates
+  are filtered to consider the period from 2006 onwards to remove
+  extremely volatile periods for international currencies.} Upon this
+initial inspection of Figure \ref{Figure2}, it is apparent that the ZAR
+has recently not been the most volatile against the USD.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question5_files/figure-latex/Sample SD Plot-1} 
+
+}
+
+\caption{Sample Standard Deviation of Respective Currencies to USD since 2005. \label{Figure2}}\label{fig:Sample SD Plot}
+\end{figure}
+
+\hypertarget{dcc-multivariate-garch-model}{%
+\section{DCC Multivariate GARCH
+Model}\label{dcc-multivariate-garch-model}}
+
+To better understand the volatility of these currencies, I take a deeper
+dive into the volatility of these currencies and fit a multivariate
+GARCH model, but by also including the Bloomberg Dollar Spot Index
+(BBDXY) as a variable; it tracks the performance of a basket of 10
+leading global currencies versus the U.S. Dollar. It has a dynamically
+updated composition and represents a diverse set of important currencies
+from trade and liquidity perspectives.
+
+I start by conducting the MARCH test, which indicates that all the
+multivariate portmanteau tests reject the null of no conditional
+heteroskedasticity, motivating my use of a MVGARCH model.\footnote{The
+  relevant test statistics can be seen in my README.}
+
+I decide to use a DCC MVGARCH Model since DCC models offer a simple and
+more parsimonious means of doing MV-vol modelling. In particular, it
+relaxes the constraint of a fixed correlation structure (assumed by the
+CCC model), to allow for estimates of time-varying correlation.
+
+The DCC GARCH estimated volatility (sigma) for each currency is depicted
+in Figure \ref{Figure3}. These volatility estimates are slightly
+different than the simple sample SD graphed in Figure \ref{Figure2}
+above, in that the ZARs volatility has increased relative to the other
+currencies, however, Brazil and Turkey still showcases more volatility,
+even in the recent few years.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question5_files/figure-latex/TidyVol_plot-1} 
+
+}
+
+\caption{DCC GARCH: Estimated Volatility (Sigma) for Each Currency \label{Figure3}}\label{fig:TidyVol_plot}
+\end{figure}
+
+After fitting the DCC GARCH, I plot the dynamic conditional correlation
+with respect to the ZAR in Figure \ref{Figure4} below, where, even
+though the graph is not very clear, it is apparent that the ZAR is the
+least correlated with the Indian Rupee. To get a clearer picture of the
+impact of the USD on the ZAR, I remove some clutter and only plot the
+dynamic conditional correlations between the ZAR and the USD in Figure
+\ref{Figure5}.
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question5_files/figure-latex/Cond_corr_plot-1} 
+
+}
+
+\caption{Dynamic Conditional Correlations: South Africa (ZAR) \label{Figure4}}\label{fig:Cond_corr_plot}
+\end{figure}
+
+In analysing Figure \ref{Figure5}, it becomes clear that The ZAR has
+generally performed well during periods where G10 currency carry trades
+have been favourable, and these currency valuations are relatively
+cheap. That is, in periods where the USD has performed poorly against
+the other G10 currencies (reflected by BBDXY), for example following the
+GFC from 2008 to 2012 and the COVID-19 pandemic from 2019 onwards, the
+ZAR has had the lowest conditional correlation with the BBDXY.
+Therefore, indicating that the ZAR is partially insulated against the
+backdrop of advanced economies' currency downturns, which indicates a
+risk-on sentiment
+
+\begin{figure}[H]
+
+{\centering \includegraphics{Question5_files/figure-latex/Cond_corr_plot 2-1} 
+
+}
+
+\caption{Dynamic Conditional Correlation: South Africa (ZAR) and BBDXY \label{Figure5}}\label{fig:Cond_corr_plot 2}
+\end{figure}
+
+\newpage
+
+\hypertarget{references}{%
+\section*{References}\label{references}}
+\addcontentsline{toc}{section}{References}
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{0}{0}
+\end{CSLReferences}
+
+\bibliography{Tex/ref}
+
+
+
+
+
+\end{document}
