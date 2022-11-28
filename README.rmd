@@ -45,36 +45,164 @@ AI_Fund <- read_rds("data/AI_Max_Fund.rds") # My Systematic AI Fund. Monthly obs
 ```
 
 
+```{r, Rolling 3 Year Annualized Returns}
+
+pacman::p_load(RcppRoll)
 
 
-```{r}
+# I start by merging the three datasets
+
+df <- left_join(AI_Fund |> pivot_wider(names_from = "Tickers", values_from = "Returns"), BM |> pivot_wider(names_from = "Tickers", values_from = "Returns") ,by ="date") |> left_join(ASISA |> pivot_wider(names_from = "Name", values_from = "Returns"), by="date") |> 
+    
+    pivot_longer(cols = -date, names_to = "Name", values_to = "Returns")
 
 
-df <- left_join(BM |> pivot_wider(names_from = "Tickers", values_from = "Returns") , ASISA |> pivot_wider(names_from = "Name", values_from = "Returns"), by= "date") |> left_join(AI_Fund |> pivot_wider(names_from = "Tickers", values_from = "Returns"), by ="date") |> pivot_longer(cols = -date ,names_to = "Name", values_to = "Returns") 
+# I calculate the rolling returns on a 3 year annualized basis
 
+df_rolling <- df |> arrange(date) |> group_by(Name) |> 
+    mutate(Roll_rets = RcppRoll::roll_prod(1+ Returns, 36, fill = NA, align = "right")^(12/36) -1) |> 
+    group_by(date) |> 
+    filter(any(!is.na(Roll_rets))) |> # Remove dates with no rolling returns
+    ungroup()
 
-p <- df |> arrange(date) |> filter(Name == c("Our_Fund", "J433")) |> 
+# Next, I determine the top decile, top quartile, median, bottom decile and bottom quartile for the ASISA funds for each month
+
+ASISA_percentiles <- df_rolling |> filter(!(Name %in% c("Our_Fund", "J433")) ) |> select(-Returns) |> 
+    
+    group_by(date) |> mutate("Top decile" = quantile(Roll_rets ,probs = 0.9, na.rm=T)) |>  
+    
+    group_by(date) |> mutate("Top quartile" = quantile(Roll_rets ,probs = 0.75, na.rm=T)) |>  
+    
+    group_by(date) |> mutate("Median" = quantile(Roll_rets ,probs = 0.5, na.rm=T)) |>  
+    
+    group_by(date) |> mutate("Bottom quartile" = quantile(Roll_rets ,probs = 0.25, na.rm=T)) |>  
+    
+    group_by(date) |> mutate("Bottom decile" = quantile(Roll_rets ,probs = 0.1, na.rm=T))  |> 
+    
+    select(- c(Name, Roll_rets)) |> ungroup() |> 
+    
+    unique() 
+
+# And merge it with Our Fund and Benchmark Rolling 3 year annualized returns
+
+Comparisson_df_plot <-
+
+df_rolling |> filter((Name %in% c("Our_Fund", "J433")) ) |> select(-Returns) |>  
+    
+    pivot_wider(names_from = "Name", values_from = "Roll_rets") |> 
+    
+    left_join(ASISA_percentiles, by = "date") |> 
+    
+    pivot_longer(cols= -date, names_to = "Name", values_to = "RollRet")
+
+# Now I graph the rolling returns of our fund versus the benchmark Capped SWIX (J433) vesus the ASISA Percentiles
+
+Comparisson_plot <- Comparisson_df_plot |>   
     
     ggplot() + 
   
-  geom_line(aes(date, Returns, color = Name), size = 0.4, alpha = 0.7) + 
+  geom_line(aes(date, RollRet, color = Name), size = 0.9, alpha = 0.7) + 
   
   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
-                    subtitle.size = fmxdat::ggpts(28),
+                    subtitle.size = fmxdat::ggpts(25),
                     caption.size = fmxdat::ggpts(25),
-                    CustomCaption = F) + 
+                    CustomCaption = T) + 
   
   fmxdat::fmx_cols() + 
   
-  labs(x = "", y = "Cumulative Returns", caption = "Note:\nCalculation own",
-       title = "Illustrating fmxdat Auxilliary functions for ggplot",
-       subtitle = "If not subtitle, make blank and Subtitle size small to make a gap\nbetween plot and Title. Test this yourself")
+  labs(x = "", y = "%", caption = "Note:\nCalculation own",
+       title = "Benchmark (J433) vs Our Fund vs ASISA Active Funds: Rolling 3 Year Annualized Returns",
+       subtitle = "The ASISA Active Funds are reflected by the monthly rollling 3 year annualized percentiles.")
   
-# Finplot now adds finishing touches easily:
+# Finplot for finishing touches easily:
 
-  fmxdat::finplot(p, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years")
+  fmxdat::finplot(Comparisson_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", )
 
 ```
+
+```{r, Tracking Errors}
+
+funds_xts <- df_rolling |> filter(!(Name %in% c("J433"))) |> 
+    
+    filter(date >= lubridate::ymd("2007-10-31") ) |> # Filter dates to calc annualized, 15 year basis, returns below
+    
+    select(-Roll_rets) |> tbl_xts(cols_to_xts = Returns, spread_by = Name)
+    
+Benchmark_xts <- df_rolling |> filter(Name %in% c("J433")) |> 
+    
+    filter(date >= lubridate::ymd("2007-10-31") ) |>  # Filter dates to calc annualized, 15 year basis, returns below
+    
+    select(-Roll_rets) |> 
+    
+    tbl_xts()    
+
+
+
+ 
+# Now I attempt to annualize the returns on a 15 year basis
+
+funds_ann <- PerformanceAnalytics::Return.annualized(funds_xts, scale = 12) |> as_tibble() |> 
+    
+    pivot_longer(cols = 1:228, names_to = "Name", values_to = "Ret")
+
+Benchmark_ann <- PerformanceAnalytics::Return.annualized(Benchmark_xts, scale = 12)|> as_tibble() # = 0.0801 for future use
+
+# Now to get the tracking errors
+
+Tracking_errors <- PerformanceAnalytics::TrackingError(funds_xts, Benchmark_xts, scale = 12) |> as_tibble() |> 
+    
+    pivot_longer(cols = 1:228, names_to = "Name", values_to = "TE")
+
+Excess_returns_df <- inner_join(funds_ann, Tracking_errors, by= "Name") |> 
+    
+    mutate(Excess_ret = Ret - 0.0801) |> 
+    
+    mutate(Median_Ret = quantile(Ret, probs=0.5, na.rm = T)) # And add the median return for plot
+
+
+
+
+
+# Lastly, I plot the results:
+
+Excess_returns_plot <- Excess_returns_df |> 
+    
+    ggplot() +
+    
+    geom_point(aes(TE, Excess_ret), size = 2, alpha= 0.7) + 
+    
+             # Noting that Our_Fund is at the coordinate: (0.042,0.0281)
+    
+     geom_point(aes(x = 0.042, y = 0.0281), size = 8, color ="red" ) +
+    
+    geom_text(aes(x = 0.042, y = 0.0281), label="Our Fund", vjust=0.5, color = "blue") + # this adds a label for the red point
+    
+    geom_vline(xintercept=0.0640, linetype="dotted") +
+    
+    geom_text(aes(x = 0.067, y = -0.22), label="Median", vjust=0) +
+    
+     fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(25),
+                    caption.size = fmxdat::ggpts(25),  
+                    CustomCaption = T) + 
+    
+
+  
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "Tracking Error to Capped SWIX", y = "Ann. Return Differential vs Capped SWIX", caption = "Note:\nCalculation own. Returns are annualized, on a 90 month (15 year) basis.",
+       title = "Excess Returns and Tracking Error Comparison",
+       subtitle = "Benchmark: Capped SWIX. Tracking Error over the past 90 months")
+  
+# Finplot for finishing touches easily:
+
+  fmxdat::finplot(Excess_returns_plot, x.vert = F, x.pct = T, y.pct = T )
+
+
+
+
+```
+
 
 
 
@@ -334,8 +462,6 @@ df_Port_ret <- T40_a |>
     mutate(SWIX_pret = sum(SWIX_wret)) 
     
 ```
-
-
 
 ```{r, ALSI and SWIX weighted portfoio returns using Safe_returns}
 
@@ -757,7 +883,7 @@ Capped_df_final |> filter(Description %in% c("ALSI Capped 6%", "ALSI Capped 10%"
   fmxdat::fmx_cols() + 
   
   labs(x = "", y = "%", caption = "Note:\nCalculation own",
-       title = "Cumulative Returns of ALSI and SWIX Indexes Capped at 6% and 10%",
+       title = "Cumulative Returns of ALSI Capped at 6% and 10%",
        subtitle = "")
 
 capping_plot_SWIX <- 
@@ -776,7 +902,7 @@ Capped_df_final |> filter(Description %in% c("SWIX Capped 6%", "SWIX Capped 10%"
   fmxdat::fmx_cols() + 
   
   labs(x = "", y = "%", caption = "Note:\nCalculation own",
-       title = "Cumulative Returns of ALSI and SWIX Indexes Capped at 6% and 10%",
+       title = "Cumulative Returns of SWIX Capped at 6% and 10%",
        subtitle = "")
 
 # Finplot for finishing touches:
@@ -792,3 +918,488 @@ fmxdat::finplot(capping_plot_SWIX, x.vert = T, x.date.type = "%Y", x.date.dist =
 
 
 
+# Question 4
+
+```{r}
+
+pacman::p_load("RiskPortfolios", "FactoMineR", "factoextra", "broom")
+
+#  Extract the weighted returns for each constituent from Q3, and change to wide format to use princomp.
+# In addition, I transform the simple returns to log returns and mean-centre them
+
+
+PCA_data <- df_Port_ret |> select(date, Tickers, ALSI_wret) |>
+    
+    mutate(log_ret = exp(ALSI_wret)-1) |>            # convert to log returns
+    
+    arrange(date) |> group_by(Tickers) |> 
+    
+    mutate(log_ret = log_ret - mean(log_ret)) |>   # Mean-centering
+    
+    ungroup() |> select(-ALSI_wret) |> 
+    
+    pivot_wider(names_from = "Tickers", values_from = "log_ret")
+
+# Now I source the following function from the tut:
+
+impute_missing_returns <- function(return_mat, impute_returns_method = "NONE", Seed = 1234){
+  # Make sure we have a date column called date:
+  if( !"date" %in% colnames(return_mat) ) stop("No 'date' column provided in return_mat. Try again please.")
+
+  # Note my use of 'any' below...
+  # Also note that I 'return' return_mat - which stops the function and returns return_mat. 
+  if( impute_returns_method %in% c("NONE", "None", "none") ) {
+    if( any(is.na(return_mat)) ) warning("There are missing values in the return matrix.. Consider maybe using impute_returns_method = 'Drawn_Distribution_Own' / 'Drawn_Distribution_Collective'")
+    return(return_mat)
+  }
+
+  
+  if( impute_returns_method  == "Average") {
+
+    return_mat <-
+      return_mat %>% gather(Stocks, Returns, -date) %>%
+      group_by(date) %>%
+      mutate(Avg = mean(Returns, na.rm=T)) %>%
+      mutate(Avg = coalesce(Avg, 0)) %>% # date with no returns - set avg to zero
+      ungroup() %>%
+      mutate(Returns = coalesce(Returns, Avg)) %>% select(-Avg) %>% spread(Stocks, Returns)
+
+    # That is just so much easier when tidy right? See how I gathered and spread again to give back a wide df?
+    
+  } else
+
+    if( impute_returns_method  == "Drawn_Distribution_Own") {
+
+      set.seed(Seed)
+      N <- nrow(return_mat)
+      return_mat <-
+
+        left_join(return_mat %>% gather(Stocks, Returns, -date),
+                  return_mat %>% gather(Stocks, Returns, -date) %>% group_by(Stocks) %>%
+                    do(Dens = density(.$Returns, na.rm=T)) %>%
+                    ungroup() %>% group_by(Stocks) %>% # done to avoid warning.
+                    do(Random_Draws = sample(.$Dens[[1]]$x, N, replace = TRUE, prob=.$Dens[[1]]$y)),
+                  by = "Stocks"
+        ) %>%  group_by(Stocks) %>% mutate(Row = row_number()) %>% mutate(Returns = coalesce(Returns, Random_Draws[[1]][Row])) %>%
+        select(-Random_Draws, -Row) %>% ungroup() %>% spread(Stocks, Returns)
+
+    } else
+
+      if( impute_returns_method  == "Drawn_Distribution_Collective") {
+
+        set.seed(Seed)
+        NAll <- nrow(return_mat %>% gather(Stocks, Returns, -date))
+
+        return_mat <-
+          bind_cols(
+          return_mat %>% gather(Stocks, Returns, -date),
+          return_mat %>% gather(Stocks, Returns, -date) %>%
+            do(Dens = density(.$Returns, na.rm=T)) %>%
+            do(Random_Draws = sample(.$Dens[[1]]$x, NAll, replace = TRUE, prob=.$Dens[[1]]$y)) %>% unnest(Random_Draws)
+          ) %>%
+          mutate(Returns = coalesce(Returns, Random_Draws)) %>% select(-Random_Draws) %>% spread(Stocks, Returns)
+
+      } else
+
+        if( impute_returns_method  == "Zero") {
+        warning("This is probably not the best idea but who am I to judge....")
+          return_mat[is.na(return_mat)] <- 0
+
+        } else
+          stop("Please provide a valid impute_returns_method method. Options include:\n'Average', 'Drawn_Distribution_Own', 'Drawn_Distribution_Collective' and 'Zero'.")
+}
+
+
+options(scipen=999) # To remove scientific notation
+
+return_matrix <- 
+  impute_missing_returns(PCA_data, impute_returns_method = "Drawn_Distribution_Collective", Seed = as.numeric(format( Sys.time(), "%Y%d%H%M")))
+
+# Remove the date column
+return_matrix_Nodate <- data.matrix(return_matrix[, -1])
+
+# Simple Sample covariance and mean:
+
+Sigma <- RiskPortfolios::covEstimation(return_matrix_Nodate)
+Mu <- RiskPortfolios::meanEstimation(return_matrix_Nodate)
+
+    
+# Conduct PCA:
+    
+pca <- prcomp(return_matrix_Nodate)   
+    
+# And now for plotting
+    
+```
+
+
+```{r, scree plot}
+
+fviz_screeplot(pca, ncp=10)
+
+```
+
+"From the plot above, we might want to stop at the fifth principal component. 87% of the information (variances) contained in the data are retained by the first five principal components."
+
+```{r, cos2 plot}
+
+fviz_cos2(pca, choice = "var", axes = 1:2, top = 10)
+
+```
+
+Note that,
+
+A high cos2 indicates a good representation of the variable on the principal component. In this case the variable is positioned close to the circumference of the correlation circle.
+
+A low cos2 indicates that the variable is not perfectly represented by the PCs. In this case the variable is close to the center of the circle.
+
+# Question 5
+
+## Loading data
+
+```{r, loading data}
+
+cncy <- read_rds("data/currencies.rds")
+cncy_Carry <- read_rds("data/cncy_Carry.rds")
+cncy_value <- read_rds("data/cncy_value.rds")
+cncyIV <- read_rds("data/cncyIV.rds")
+bbdxy <- read_rds("data/bbdxy.rds")
+
+Currency_names_full <- cncy |> summarise(Name) |> unique() |> pull() 
+
+
+pacman::p_load("MTS", "robustbase","fGarch")
+pacman::p_load("tidyverse", "devtools", "rugarch", "rmgarch", 
+    "forecast", "tbl2xts", "lubridate", "PerformanceAnalytics", 
+    "ggthemes", "MTS")
+
+print(Currency_names_full)
+
+```
+
+## Sample SD comparison of selected currencies
+
+Lets investigate the first point to comment on : "The South African rand (ZAR) has over the past few years been one of the most volatile currencies". To investigate this, I select 8 countries' currencies: Brazil, EU, India, SA, Turkey, Poland, Zambia, and the UK (The justification of these choices will be discussed in the final report), and compare their respective dollar exchange rates. 
+
+
+```{r}
+
+# Remove the common second part of names
+
+Curr_df <- cncy |> mutate(Name = gsub( "_Cncy", "", Name)) |> mutate(Name = gsub( "_Inv", "", Name)) 
+
+
+
+Countries_to_consider <- c("Brazil","EU","India","Poland","Zambia","Turkey","SouthAfrica","UK")
+
+# filter countries to consider
+
+Curr_df <- Curr_df |> filter(Name %in% Countries_to_consider) 
+
+# Now I take their dlog in order to plot their cummulative growth w.r.t the USD
+
+Curr_df |>  ggplot() +
+    
+    geom_line(aes(date, Price, color = Name))
+
+```
+
+To get an initial comparison of volatility of our selected currencies, I plot the sample standard deviation in log growth against the dollar. I also filter the dates to consider the period from 2006 onwards to remove extremely volatile periods for international currencies. 
+
+```{r}
+
+
+SD_plot_df <- Curr_df |>  arrange(date) |> 
+    
+    group_by(Name) |> 
+    
+    mutate(Growth = log(Price) - lag(log(Price))) |> 
+    
+    filter(date > dplyr::first(date)) |>  
+    
+    mutate(scaledgrowth = Growth - mean(Growth, rm.na = T)) |>     # Scale the Growth by demeaning
+    
+    mutate(SampleSD = (sqrt(scaledgrowth^2))) |> 
+    
+    ungroup() |> 
+    
+    filter(date > lubridate::ymd(20041231))
+
+
+
+
+Scaledgrowth_plot_df <-  SD_plot_df |> 
+ 
+    ggplot() + 
+  
+  geom_line(aes(date, scaledgrowth , color = Name), size = 0.6, alpha = 0.7) +
+    
+    facet_wrap(~Name, scales = "free_y")+
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "%", caption = "Note:\nCalculation own",
+       title = "Scaled (demeaned) Log Growth of Respective Currencies to USD since 2005.",
+       subtitle = "")
+
+SD_plot <- SD_plot_df |>  
+
+  ggplot() + 
+  
+   geom_line(aes(date, SampleSD , color = Name), size = 0.6, alpha = 0.7) +
+    
+    facet_wrap(~Name, scales = "free_y")+
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "%", caption = "Note:\nCalculation own",
+       title = "Sample Standard Deviation of Respective Currencies to USD since 2005.",
+       subtitle = "")
+
+# Finplot for finishing touches:
+
+
+
+fmxdat::finplot(Scaledgrowth_plot_df, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", darkcol = T)
+fmxdat::finplot(SD_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", darkcol = T)
+
+
+```
+
+From this initial inspection of sample SD, the plot indicates that the ZAR has recently not been the most volatile WITH RESPECT TO THE USD. However, lets take a deeper dive into the volatility of these currencies and try and fit a multivariate GARCH model, but by also including the Bloomberg Dollar Spot Index (BBDXY) as a variable; it tracks the performance of a basket of 10 leading global currencies versus the U.S. Dollar. It has a dynamically updated composition and represents a diverse set of currencies that are important from trade and liquidity perspectives.
+
+Importantly, since the UK and a large part of the EU is almost always included in the BBDXY as the top 10 leading currencies, I remove them from the model as their effect against the dollar is endogenous. From this multivariate GARCH, I can estimate the conditional time-varying correlation the ZAR has versus the other currencies, as well as see whether the ZAR is one of the currencies that benefits the most during periods where the Dollar is comparatively strong, indicating a risk-on sentiment.
+
+## MV Conditional Heteroskedasticity tests
+
+I conduct MV Portmanteau tests using MarchTest from MTS package, after I join the BBDXY data and drop the UK and EU as discussed above. 
+
+```{r}
+
+# Calculate the scaled (demeaned) log growth for BBDXY 
+
+ln_bbdxy <- bbdxy |> arrange(date) |> 
+    
+    mutate(Growth = log(Price) - lag(log(Price))) |> 
+    
+    filter(date > dplyr::first(date)) |>  
+    
+    mutate(scaledgrowth = Growth - mean(Growth, rm.na = T)) |>     # Scale the Growth by demeaning
+    
+    mutate(SampleSD = (sqrt(scaledgrowth^2))) |> 
+    
+    ungroup() |> 
+    
+    filter(date > lubridate::ymd(20041231))
+
+# Now I merge it with the rest, and remove the UK, EU, and Zambia
+
+gwt <- SD_plot_df |> select(date, Name, Growth) |> filter(!(Name %in% c("EU", "UK", "Zambia"))) |> 
+    
+    pivot_wider(names_from = "Name", values_from = "Growth") |> 
+
+    left_join(ln_bbdxy |> select(date, Growth) |> rename(BBDXY = Growth), by= c("date")) |> 
+    
+    pivot_longer(cols = -date, values_to = "Growth", names_to = "Currency") |> 
+    
+    mutate(Growth = coalesce(Growth, 0)) 
+
+# Change to xts format
+
+gwt_xts <- gwt |> 
+    
+    tbl_xts(cols_to_xts = Growth, spread_by = Currency)
+
+# MV Portmanteau tests
+
+MarchTest(gwt_xts)
+
+```
+
+The MARCH test indicates that all the MV portmanteau tests reject the null of no conditional heteroskedasticity, motivating our use of MVGARCH models.
+
+## DCC MV-GARCH MODEL
+
+I decide to use a DCC MVGARCH Model; DCC models offer a simple and more parsimonious means of doing MV-vol modelling. In particular, it relaxes the constraint of a fixed correlation structure (assumed by the CCC model), to allow for estimates of time-varying correlation. 
+
+```{r, DCC MVGARCH}
+
+# As in the tut, I select a VAR order of zero for the mean equation, and simply use the mean of each series.
+# The mean equation is thus in our case simply: Growth = mean(Growth) + et
+
+# Then, for every series, a standard univariate GARCH(1,1) is run - giving us:
+# et and sigmat, which is then used to calculate the standardized resids, zt, which is used in DCC calcs after.
+
+DCCPre <- dccPre(gwt_xts, include.mean = F, p=0) # Find a nice way to put this in a table
+
+```
+
+I now have the estimates of volatility for each series (currency), and below I change the output to a usable Xts series for each column in gwt_xts. And I plot the Sigma (volatility) of each series. 
+
+```{r}
+
+Vol <- DCCPre$marVol
+
+colnames(Vol) <- colnames(gwt_xts)
+
+Vol <- 
+  data.frame( cbind( date = index(gwt_xts), Vol)) |>  # Add date column which dropped away...
+  mutate(date = as.Date(date)) |>  tibble::as_tibble()  # make date column a date column...
+
+
+
+TidyVol <- Vol |>  pivot_longer(names_to = "Stocks", values_to =  "Sigma", cols =  -date)
+
+TidyVol_plot <- TidyVol |> ggplot() + 
+  
+  geom_line(aes(date, Sigma , color = Stocks), size = 0.9, alpha = 0.6) +
+    
+  
+   fmxdat::theme_fmx(title.size = fmxdat::ggpts(30), 
+                    subtitle.size = fmxdat::ggpts(0),
+                    caption.size = fmxdat::ggpts(25),
+                    CustomCaption = T) + 
+    
+  fmxdat::fmx_cols() + 
+  
+  labs(x = "", y = "Sigma", caption = "Note:\nCalculation own",
+       title = "DCC GARCH: Estimated Volatility (Sigma) for Each Currency",
+       subtitle = "Notice this includes the Bloomberg Dollar Spot Index (BBDXY)")
+    
+# And finally touches with finplot    
+
+fmxdat::finplot(TidyVol_plot, x.vert = T, x.date.type = "%Y", x.date.dist = "2 years", darkcol = F)
+
+
+```
+
+The volatility estimates are slightly different than the simple sample SD graph above, in that the ZAR's volatility has increased relative to the other currencies, however, Brazil and Turkey still showcases more volatility, even in the recent few years. 
+
+## Calculating the DCC Model
+
+I will now use the standardized residuals to calculate the DCC Model
+
+
+```{r}
+# The standardized residuals
+
+StdRes <- DCCPre$sresi
+
+# I first do the detach trick from the tut:
+
+pacman::p_load(tidyverse,fmxdat, rmsfuns, tbl2xts, tidyr, ggpubr, broom,rstatix, modelr )
+
+detach("package:tidyverse", unload=TRUE)
+detach("package:fmxdat", unload=TRUE)
+detach("package:rmsfuns", unload=TRUE)
+detach("package:tbl2xts", unload=TRUE)
+detach("package:ggpubr", unload=TRUE)
+detach("package:broom", unload=TRUE)
+detach("package:rstatix", unload=TRUE)
+detach("package:modelr", unload=TRUE)
+detach("package:tidyr", unload=TRUE)
+detach("package:dplyr", unload=TRUE)
+
+DCC <- dccFit(StdRes,type = "Engle") 
+
+```
+
+
+
+```{r}
+
+pacman::p_load(tidyverse,fmxdat, rmsfuns, tbl2xts, tidyr, ggpubr, broom,rstatix, modelr )
+
+Rhot <- DCC$rho.t
+# Right, so it gives us all the columns together in the form:
+# X1,X1 ; X1,X2 ; X1,X3 ; ....
+
+# So, let's be clever about defining more informative col names. 
+# I will create a renaming function below:
+ReturnSeries = gwt_xts
+DCC.TV.Cor = Rhot
+
+renamingdcc <- function(ReturnSeries, DCC.TV.Cor) {
+  
+ncolrtn <- ncol(ReturnSeries)
+namesrtn <- colnames(ReturnSeries)
+paste(namesrtn, collapse = "_")
+
+nam <- c()
+xx <- mapply(rep, times = ncolrtn:1, x = namesrtn)
+# Now let's be creative in designing a nested for loop to save the names corresponding to the columns of interest.. 
+
+# TIP: draw what you want to achieve on a paper first. Then apply code.
+
+# See if you can do this on your own first.. Then check vs my solution:
+
+nam <- c()
+for (j in 1:(ncolrtn)) {
+for (i in 1:(ncolrtn)) {
+  nam[(i + (j-1)*(ncolrtn))] <- paste(xx[[j]][1], xx[[i]][1], sep="_")
+}
+}
+
+colnames(DCC.TV.Cor) <- nam
+
+# So to plot all the time-varying correlations wrt SBK:
+ # First append the date column that has (again) been removed...
+DCC.TV.Cor <- 
+    data.frame( cbind( date = index(ReturnSeries), DCC.TV.Cor)) %>% # Add date column which dropped away...
+    mutate(date = as.Date(date)) %>%  tbl_df() 
+
+DCC.TV.Cor <- DCC.TV.Cor %>% gather(Pairs, Rho, -date)
+
+DCC.TV.Cor
+
+}
+
+# Let's see if our function works! Excitement!
+Rhot <- 
+  renamingdcc(ReturnSeries = gwt_xts, DCC.TV.Cor = Rhot)
+
+head(Rhot %>% arrange(date))
+
+
+```
+
+And now I create a plot the ZAR relative to the other currencies
+
+```{r}
+# Let's now create a plot for all the stocks relative to the other stocks...
+g1 <- 
+  ggplot(Rhot |>  filter(grepl("SouthAfrica_", Pairs ), !grepl("_SouthAfrica", Pairs)) ) + 
+  geom_line(aes(x = date, y = Rho, colour = Pairs)) + 
+  theme_hc() +
+  ggtitle("Dynamic Conditional Correlations: South Africa (ZAR)")
+
+print(g1)
+```
+
+For a clearer picture, lets only plot the SouthAfrica_BBDXY plot
+
+```{r}
+g2 <- 
+  ggplot(Rhot |>  filter(Pairs %in% c("SouthAfrica_BBDXY"))) + 
+  geom_line(aes(x = date, y = Rho, colour = Pairs)) + 
+  theme_hc() +
+  ggtitle("Dynamic Conditional Correlation: South Africa (ZAR) and BBDXY")
+
+print(g2)
+
+
+```
+
+
+
+# Question 6 
